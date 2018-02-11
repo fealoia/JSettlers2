@@ -18,6 +18,9 @@ final_VP = []
 
 for row in first_three_placements.iterrows():
     data = row[1]
+    if "robot" not in data['player']:
+        continue
+
     roll_numbers = [data['firstPlacementNumberOne'],data['firstPlacementNumberTwo'],data['firstPlacementNumberThree'],
             data['secondPlacementNumberOne'],data['secondPlacementNumberTwo'],data['secondPlacementNumberThree'],
             data['thirdPlacementNumberOne'],data['thirdPlacementNumberTwo'],data['thirdPlacementNumberthree']]
