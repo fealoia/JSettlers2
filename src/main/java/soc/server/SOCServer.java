@@ -5811,7 +5811,8 @@ public class SOCServer extends Server
         // TODO start more than one here
         // TODO property to control # "a few" games started here
 
-        String gaName = "~botsOnly~" + numRobotOnlyGamesRemaining;
+        final int gameSeconds = (int) (System.currentTimeMillis()/1000L);
+        String gaName = Integer.toString(gameSeconds);
 
         SOCGame newGame = createGameAndBroadcast
             (null, gaName, SOCGameOption.getAllKnownOptions(), Version.versionNumber(), true, hasGameListMonitor);

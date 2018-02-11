@@ -70,6 +70,8 @@ import soc.message.SOCStartGame;
 import soc.message.SOCTimingPing;  // for javadoc
 import soc.message.SOCTurn;
 
+import soc.server.database.SOCDBHelper;
+
 import soc.util.CappedQueue;
 import soc.util.DebugRecorder;
 import soc.util.Queue;
@@ -137,7 +139,7 @@ public class SOCRobotBrain extends Thread
      * Default 0.25 (25% of normal pause time: 4x speed-up).
      * @since 2.0.00
      */
-    public static float BOTS_ONLY_FAST_PAUSE_FACTOR = .25f;
+    public static float BOTS_ONLY_FAST_PAUSE_FACTOR = .0f;
 
     /**
      * If, during a turn, we make this many illegal build
@@ -669,6 +671,8 @@ public class SOCRobotBrain extends Thread
      * keeps track of the last thing we wanted, for debugging purposes
      */
     protected SOCPossiblePiece lastTarget;
+
+    protected boolean hasPlacedThirdSettlement;
 
     /**
      * Create a robot brain to play a game.
@@ -2038,7 +2042,13 @@ public class SOCRobotBrain extends Thread
 
         //D.ebugPrintln("STOPPING AND DEALLOCATING");
         gameEventQ = null;
-
+        
+        try {
+                SOCDBHelper.saveInitialSettlements(ourPlayerData);
+        } catch (Exception e){
+        	System.err.println("Error saving initial settlements: " + e);
+        }
+        
         client.addCleanKill();
         client = null;
 
@@ -2325,6 +2335,10 @@ public class SOCRobotBrain extends Thread
                     counter = 0;
                     expectPLAY1 = true;
 
+                    if (hasPlacedThirdSettlement == false) {
+                        ourPlayerData.thirdSettlementCoord = whatWeWantToBuild.getCoordinates();
+                        hasPlacedThirdSettlement = true; 
+                    }
                     //D.ebugPrintln("!!! PUTTING PIECE "+whatWeWantToBuild+" !!!");
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
@@ -3859,10 +3873,11 @@ public class SOCRobotBrain extends Thread
         while (trackersIter.hasNext())
         {
             SOCPlayerTracker tracker = trackersIter.next();
-            if (! isCancel)
+            if (! isCancel) {
                 tracker.addNewSettlement(newSettlement, playerTrackers);
-            else
+            } else {
                 tracker.cancelWrongSettlement(newSettlement);
+            }
         }
 
         trackersIter = playerTrackers.values().iterator();
@@ -4459,7 +4474,7 @@ public class SOCRobotBrain extends Thread
     {
         //D.ebugPrintln("BUILD REQUEST FOR SETTLEMENT AT "+Integer.toHexString(firstSettlement));
         pause(500);
-        lastStartingPieceCoord = firstSettlement;
+        lastStartingPieceCoord = ourPlayerData.firstSettlementCoord = firstSettlement;
         client.putPiece(game, new SOCSettlement(ourPlayerData, firstSettlement, null));
         pause(1000);
     }
@@ -4488,7 +4503,7 @@ public class SOCRobotBrain extends Thread
 
         //D.ebugPrintln("BUILD REQUEST FOR SETTLEMENT AT "+Integer.toHexString(secondSettlement));
         pause(500);
-        lastStartingPieceCoord = initSettlement;
+        lastStartingPieceCoord = ourPlayerData.secondSettlementCoord = initSettlement;
         client.putPiece(game, new SOCSettlement(ourPlayerData, initSettlement, null));
         pause(1000);
     }

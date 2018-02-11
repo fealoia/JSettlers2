@@ -99,12 +99,12 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
     /**
      * The integer id for this player (0 to n-1).
      */
-    private int playerNumber;
+    public int playerNumber;
 
     /**
      * the game that this player is in
      */
-    private SOCGame game;
+    public SOCGame game;
 
     /**
      * the number of pieces not in play.
@@ -587,6 +587,10 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
      */
     public transient List<Object> pendingMessagesOut;
 
+    public int firstSettlementCoord;
+    public int secondSettlementCoord;
+    public int thirdSettlementCoord;
+
     /**
      * create a copy of the player
      *
@@ -701,6 +705,10 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
         scenario_svpFromEachLandArea_bitmask = player.scenario_svpFromEachLandArea_bitmask;
         startingLandArea1 = player.startingLandArea1;
         startingLandArea2 = player.startingLandArea2;
+    
+        firstSettlementCoord = player.firstSettlementCoord;
+        secondSettlementCoord = player.secondSettlementCoord;
+        thirdSettlementCoord = player.thirdSettlementCoord;
     }
 
     /**

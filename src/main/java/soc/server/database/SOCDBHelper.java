@@ -20,6 +20,7 @@
  **/
 package soc.server.database;
 
+import soc.game.SOCBoard;
 import soc.game.SOCGame;
 import soc.game.SOCGameOption;
 import soc.game.SOCPlayer;
@@ -46,7 +47,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
-
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -1792,7 +1793,7 @@ public class SOCDBHelper
                     final String optsStr = (opts == null) ? null : SOCGameOption.packOptionsToString(opts, false);
                     saveGameCommand.setString(i, optsStr);
                 }
-
+                
                 saveGameCommand.executeUpdate();
 
                 return true;
@@ -1806,6 +1807,92 @@ public class SOCDBHelper
         }
 
         return false;
+    }
+
+    public static void saveInitialSettlements(final SOCPlayer pl) throws SQLException {
+        if (testOne_doesTableExist("firstThreePlacements", true, false) == false) {
+            String sql = "CREATE TABLE firstThreePlacements(" +
+                "game TEXT, player TEXT," +
+                "firstPlacementCoordinate INT," +
+                "firstPlacementResourceOne INT, firstPlacementNumberOne INT," +
+                "firstPlacementResourceTwo INT, firstPlacementNumberTwo INT," +
+                "firstPlacementResourceThree INT, firstPlacementNumberThree INT," +
+                "secondPlacementCoordinate INT," +
+                "secondPlacementResourceOne INT, secondPlacementNumberOne INT," +
+                "secondPlacementResourceTwo INT, secondPlacementNumberTwo INT," +
+                "secondPlacementResourceThree INT, secondPlacementNumberThree INT," +
+                "thirdPlacementCoordinate INT," +
+                "thirdPlacementResourceOne INT, thirdPlacementNumberOne INT," +
+                "thirdPlacementResourceTwo INT, thirdPlacementNumberTwo INT," +
+                "thirdPlacementResourceThree INT, thirdPlacementNumberthree INT);";
+            try {
+                runDDL(sql);
+            }   
+            catch (SQLException se) {
+                    throw se;
+            }
+        }
+
+        SOCBoard board = pl.game.getBoard();
+        StringBuilder sql = new StringBuilder();
+        
+        sql.append("INSERT into firstThreePlacements VALUES(");
+        sql.append("\'" + pl.game.getName() + "\',");
+        sql.append("\'" + pl.getName() + "\',");
+        Vector<Integer> hexes = board.getAdjacentHexesToNode(pl.firstSettlementCoord);
+        sql.append(pl.firstSettlementCoord +","); 
+
+                for (int i=0; i < 3 ;i++) {
+                	if(i < hexes.size()) {
+                		int hex = hexes.get(i).intValue();
+                    	sql.append(board.getHexTypeFromCoord(hex) + ",");
+                    	sql.append(board.getNumberOnHexFromCoord(hex));
+                    	sql.append(",");
+                	} else {
+                		sql.append("-1, -1");
+                		sql.append(",");
+                	}
+                }
+                
+               	hexes = board.getAdjacentHexesToNode(pl.secondSettlementCoord);
+                sql.append(pl.secondSettlementCoord + ","); 
+                
+               	for (int i=0; i < 3 ;i++) {
+                	if(i < hexes.size()) {
+                		int hex = hexes.get(i).intValue();
+                    	sql.append(board.getHexTypeFromCoord(hex) + ",");
+                    	sql.append(board.getNumberOnHexFromCoord(hex));
+                    	sql.append(",");
+                	} else {
+                		sql.append("-1, -1");
+                		sql.append(",");
+                	}
+                }
+               	
+               	hexes = board.getAdjacentHexesToNode(pl.thirdSettlementCoord);
+                sql.append(pl.thirdSettlementCoord + ","); 
+                
+               	for (int i=0; i < 3 ;i++) {
+                	if(i < hexes.size()) {
+                		int hex = hexes.get(i).intValue();
+                    	sql.append(board.getHexTypeFromCoord(hex) + ",");
+                    	sql.append(board.getNumberOnHexFromCoord(hex));
+                    	sql.append(",");
+                	} else {
+                		sql.append("-1, -1");
+                		sql.append(",");
+                	}
+                }
+            try {
+            	sql.delete(sql.length()-1,sql.length());
+            	sql.append(')');
+            	System.out.println(sql.toString());
+                runDDL(sql.toString());
+            }   
+            catch (SQLException se) {
+            		se.printStackTrace();
+                    throw se;
+            }             
     }
 
     /**
