@@ -1808,6 +1808,58 @@ public class SOCDBHelper
 
         return false;
     }
+    
+    public static void savePlacement(final SOCPlayer pl, final String type, final int coordinate) throws SQLException {
+    	if (testOne_doesTableExist("allPlacements", true, false) == false) {
+            String sql = "CREATE TABLE allPlacements(" +
+                "game TEXT, player TEXT, type TEXT," +
+                "coordinate INT, numSettlements INT, numCities INT," +
+                "placementResourceOne INT, placementNumberOne INT," +
+                "placementResourceTwo INT, placementNumberTwo INT," +
+                "placementResourceThree INT, placementNumberThree INT);";
+            try {
+                runDDL(sql);
+            }   
+            catch (SQLException se) {
+                    throw se;
+            }
+        }
+    	SOCBoard board = pl.game.getBoard();
+        StringBuilder sql = new StringBuilder();
+        
+        sql.append("INSERT into allPlacements VALUES(");
+        sql.append("\'" + pl.game.getName() + "\',");
+        sql.append("\'" + pl.getName() + "\',");
+        sql.append("\'" + type + "\',");
+        sql.append(coordinate + ",");
+        sql.append(pl.numSettlements + ",");
+        sql.append(pl.numCities + ",");
+
+
+    Vector<Integer> hexes = board.getAdjacentHexesToNode(coordinate);
+
+            for (int i=0; i < 3 ;i++) {
+            	if(i < hexes.size()) {
+            		int hex = hexes.get(i).intValue();
+                	sql.append(board.getHexTypeFromCoord(hex) + ",");
+                	sql.append(board.getNumberOnHexFromCoord(hex));
+                	sql.append(",");
+            	} else {
+            		sql.append("-1, -1");
+            		sql.append(",");
+            	}
+            }
+            try {
+            	sql.delete(sql.length()-1,sql.length());
+            	sql.append(')');
+            	System.out.println(sql.toString());
+                runDDL(sql.toString());
+            }   
+            catch (SQLException se) {
+            		se.printStackTrace();
+                    throw se;
+            }             
+    }
 
     public static void saveInitialSettlements(final SOCPlayer pl) throws SQLException {
         if (testOne_doesTableExist("firstThreePlacements", true, false) == false) {

@@ -2334,11 +2334,20 @@ public class SOCRobotBrain extends Thread
                     waitingForGameState = true;
                     counter = 0;
                     expectPLAY1 = true;
+                    ourPlayerData.numSettlements++;
 
                     if (hasPlacedThirdSettlement == false) {
                         ourPlayerData.thirdSettlementCoord = whatWeWantToBuild.getCoordinates();
                         hasPlacedThirdSettlement = true; 
                     }
+
+                    try {
+                        SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", whatWeWantToBuild.getCoordinates());
+                    } catch(Exception e) {
+        	        System.err.println("Error saving placement: " + e);
+                        e.printStackTrace();
+                    }
+
                     //D.ebugPrintln("!!! PUTTING PIECE "+whatWeWantToBuild+" !!!");
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
@@ -2371,6 +2380,14 @@ public class SOCRobotBrain extends Thread
                     waitingForGameState = true;
                     counter = 0;
                     expectPLAY1 = true;
+                    ourPlayerData.numCities++;
+                   
+                    try { 
+                        SOCDBHelper.savePlacement(ourPlayerData, "CITY", whatWeWantToBuild.getCoordinates());
+                    } catch(Exception e) {
+        	        System.err.println("Error saving placement: " + e);
+                        e.printStackTrace();
+                    }
 
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
@@ -2447,6 +2464,14 @@ public class SOCRobotBrain extends Thread
                     counter = 0;
                     waitingForGameState = true;
                     final int firstSettleNode = openingBuildStrategy.planInitialSettlements();
+                    ourPlayerData.numSettlements++;
+
+                    try {
+                        SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", firstSettleNode);
+                    } catch(Exception e) {
+        	        System.err.println("Error saving placement: " + e);
+                        e.printStackTrace();
+                    }
                     placeFirstSettlement(firstSettleNode);
                 }
             }
@@ -2478,6 +2503,14 @@ public class SOCRobotBrain extends Thread
                     counter = 0;
                     waitingForGameState = true;
                     final int secondSettleNode = openingBuildStrategy.planSecondSettlement();
+                    ourPlayerData.numSettlements++;
+
+                    try {
+                        SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", secondSettleNode);
+                    } catch(Exception e) {
+        	        System.err.println("Error saving placement: " + e);
+                        e.printStackTrace();
+                    }
                     placeInitSettlement(secondSettleNode);
                 }
             }

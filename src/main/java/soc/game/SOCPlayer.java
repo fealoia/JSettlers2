@@ -590,6 +590,8 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
     public int firstSettlementCoord;
     public int secondSettlementCoord;
     public int thirdSettlementCoord;
+    public int numSettlements;
+    public int numCities;
 
     /**
      * create a copy of the player
@@ -709,6 +711,8 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
         firstSettlementCoord = player.firstSettlementCoord;
         secondSettlementCoord = player.secondSettlementCoord;
         thirdSettlementCoord = player.thirdSettlementCoord;
+        numSettlements = player.numSettlements;
+        numCities = player.numCities;
     }
 
     /**
