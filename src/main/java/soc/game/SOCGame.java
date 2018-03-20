@@ -565,13 +565,6 @@ public class SOCGame implements Serializable, Cloneable
     public static final ResourceSet EMPTY_RESOURCES = new SOCResourceSet();
 
     /**
-     * the set of resources a player needs to buy a development card
-     * @see SOCPlayingPiece#getResourcesToBuild(int)
-     * @see SOCInventory
-     */
-    public static final SOCResourceSet CARD_SET = new SOCResourceSet(0, 1, 1, 1, 0, 0);
-
-    /**
      * The {@link SOCBoard.BoardFactory} for creating new boards in the SOCGame constructors.
      * Differs at client and at server.
      * If null, SOCGame constructor sets to {@link SOCBoard.DefaultBoardFactory}.
@@ -933,6 +926,8 @@ public class SOCGame implements Serializable, Cloneable
      *        oldGameState holds the <B>next</B> state to go to when all players are done picking resources.
      *        After picking gold from a dice roll, this will usually be {@link #PLAY1}.
      *        Sometimes will be {@link #PLACING_FREE_ROAD2} or {@link #SPECIAL_BUILDING}.
+     *        Can be {@link #ROLL_OR_CARD} in scenario {@link SOCGameOption#K_SC_PIRI SC_PIRI}:
+     *        See {@link #pickGoldHexResources(int, SOCResourceSet)} and {@link #rollDice_update7gameState()}.
      *</UL>
      * Also used if the game board was reset: {@link #getResetOldGameState()} holds the state before the reset.
      */
@@ -2019,7 +2014,10 @@ public class SOCGame implements Serializable, Cloneable
     }
 
     /**
+     * Get the current dice total from the most recent roll.
+     *  -1 at start of game, 0 during player's turn before roll (state {@link #ROLL_OR_CARD}).
      * @return the current dice result
+     * @see #rollDice()
      */
     public int getCurrentDice()
     {
@@ -4025,10 +4023,10 @@ public class SOCGame implements Serializable, Cloneable
         if (! sc_piri_devcards)
         {
             devCardDeck[20] = SOCDevCardConstants.CAP;
-            devCardDeck[21] = SOCDevCardConstants.LIB;
+            devCardDeck[21] = SOCDevCardConstants.MARKET;
             devCardDeck[22] = SOCDevCardConstants.UNIV;
             devCardDeck[23] = SOCDevCardConstants.TEMP;
-            devCardDeck[24] = SOCDevCardConstants.TOW;
+            devCardDeck[24] = SOCDevCardConstants.CHAPEL;
         } else {
             // _SC_PIRI: VP cards become Knight cards, or omit if < 4 players
             if (devCardDeck.length > 24)
@@ -4937,7 +4935,9 @@ public class SOCGame implements Serializable, Cloneable
      * If the board contains gold hexes, it may become {@link #WAITING_FOR_PICK_GOLD_RESOURCE}.
      * For 7, gameState becomes either {@link #WAITING_FOR_DISCARDS},
      * {@link #WAITING_FOR_ROBBER_OR_PIRATE}, or {@link #PLACING_ROBBER}.
-     *<br>
+     *<P>
+     * For dice roll total, see returned {@link RollResult} or call {@link #getCurrentDice()} afterwards.
+     *<P>
      * Checks game option N7: Roll no 7s during first # rounds
      * and N7C: Roll no 7s until a city is built.
      *<P>

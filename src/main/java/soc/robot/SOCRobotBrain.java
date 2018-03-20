@@ -44,6 +44,7 @@ import soc.game.SOCSpecialItem;
 import soc.game.SOCTradeOffer;
 
 import soc.message.SOCAcceptOffer;
+import soc.message.SOCBankTrade;
 import soc.message.SOCCancelBuildRequest;
 import soc.message.SOCChoosePlayer;
 import soc.message.SOCChoosePlayerRequest;
@@ -294,7 +295,7 @@ public class SOCRobotBrain extends Thread
      * {@link SOCRobotDM#buildingPlan} is the same Stack.
      * @see #whatWeWantToBuild
      */
-    protected Stack<SOCPossiblePiece> buildingPlan;
+    protected final Stack<SOCPossiblePiece> buildingPlan;
 
     /**
      * This is what we tried building this turn,
@@ -1576,12 +1577,11 @@ public class SOCRobotBrain extends Thread
                         planAndPlaceInvItem();  // choose and send a placement location
                     }
 
-                    if (waitingForTradeMsg && (mesType == SOCMessage.SIMPLEACTION)
-                        && (((SOCSimpleAction) mes).getActionType() == SOCSimpleAction.TRADE_SUCCESSFUL))
+                    if (waitingForTradeMsg && (mesType == SOCMessage.BANKTRADE)
+                        && (((SOCBankTrade) mes).getPlayerNumber() == ourPlayerNumber))
                     {
                         //
-                        // This is the bank/port trade message we've been waiting for;
-                        // is sent to only the trading player
+                        // This is the bank/port trade confirmation announcement we've been waiting for
                         //
                         waitingForTradeMsg = false;
                     }
@@ -2075,8 +2075,8 @@ public class SOCRobotBrain extends Thread
 
     /**
      * Handle a game state change from {@link SOCGameState} or another message
-     * which has a Game State field. Clears {@link #waitingForGameState} and
-     * updates {@link #oldGameState}, then calls
+     * which has a Game State field. Clears {@link #waitingForGameState},
+     * updates {@link #oldGameState} if state value is actually changing, then calls
      * {@link SOCDisplaylessPlayerClient#handleGAMESTATE(SOCGame, int)}.
      * @param gs  New game state; if 0, does nothing
      * @since 2.0.00
@@ -2087,7 +2087,9 @@ public class SOCRobotBrain extends Thread
             return;
 
         waitingForGameState = false;
-        oldGameState = game.getGameState();
+        int currGS = game.getGameState();
+        if (currGS != gs)
+            oldGameState = currGS;  // if no actual change, don't overwrite previously known oldGameState
         SOCDisplaylessPlayerClient.handleGAMESTATE(game, gs);
     }
 
@@ -2324,6 +2326,13 @@ public class SOCRobotBrain extends Thread
      * <LI> {@link SOCGame#PLACING_FREE_ROAD1}
      * <LI> {@link SOCGame#PLACING_FREE_ROAD2}
      *</UL>
+     * Does nothing if {@link #waitingForGameState}, {@link #waitingForOurTurn}, <tt>! {@link #ourTurn}</tt>,
+     * or if state's corresponding <tt>expectPLACING_&lt;piecetype&gt;</tt> flag isn't set.
+     *<P>
+     * If all goes well, server will reply with a PutPiece message
+     * to be handled in {@link #handlePUTPIECE_updateTrackers(int, int, int)}.
+     *
+     * @see #buildRequestPlannedPiece()
      * @since 1.1.09
      */
     private void placeIfExpectPlacing()
@@ -2333,7 +2342,8 @@ public class SOCRobotBrain extends Thread
 
         switch (game.getGameState())
         {
-            case SOCGame.PLACING_SETTLEMENT:
+        case SOCGame.PLACING_SETTLEMENT:
+            if (ourTurn && (! waitingForOurTurn) && (expectPLACING_SETTLEMENT))
             {
                 if (ourTurn && (! waitingForOurTurn) && (expectPLACING_SETTLEMENT))
                 {
@@ -2367,14 +2377,13 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.PLACING_ROAD:
+        case SOCGame.PLACING_ROAD:
+            if (ourTurn && (! waitingForOurTurn) && (expectPLACING_ROAD))
             {
-                if (ourTurn && (! waitingForOurTurn) && (expectPLACING_ROAD))
-                {
-                    expectPLACING_ROAD = false;
-                    waitingForGameState = true;
-                    counter = 0;
-                    expectPLAY1 = true;
+                expectPLACING_ROAD = false;
+                waitingForGameState = true;
+                counter = 0;
+                expectPLAY1 = true;
 
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
@@ -2388,7 +2397,8 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.PLACING_CITY:
+        case SOCGame.PLACING_CITY:
+            if (ourTurn && (! waitingForOurTurn) && (expectPLACING_CITY))
             {
                 if (ourTurn && (! waitingForOurTurn) && (expectPLACING_CITY))
                 {
@@ -2417,65 +2427,60 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.PLACING_SHIP:
-                {
-                    if (ourTurn && (! waitingForOurTurn) && (expectPLACING_SHIP))
-                    {
-                        expectPLACING_SHIP = false;
-                        waitingForGameState = true;
-                        counter = 0;
-                        expectPLAY1 = true;
-
-                        pause(500);
-                        client.putPiece(game, whatWeWantToBuild);
-                        pause(1000);
-                    }
-                }
-                break;
-
-            case SOCGame.PLACING_FREE_ROAD1:
+        case SOCGame.PLACING_SHIP:
+            if (ourTurn && (! waitingForOurTurn) && (expectPLACING_SHIP))
             {
-                if (ourTurn && (! waitingForOurTurn) && (expectPLACING_FREE_ROAD1))
-                {
-                    expectPLACING_FREE_ROAD1 = false;
-                    waitingForGameState = true;
-                    counter = 0;
-                    expectPLACING_FREE_ROAD2 = true;
-                    // D.ebugPrintln("!!! PUTTING PIECE 1 " + whatWeWantToBuild + " !!!");
-                    pause(500);
-                    client.putPiece(game, whatWeWantToBuild);  // either ROAD or SHIP
-                    pause(1000);
-                }
+                expectPLACING_SHIP = false;
+                waitingForGameState = true;
+                counter = 0;
+                expectPLAY1 = true;
+
+                pause(500);
+                client.putPiece(game, whatWeWantToBuild);
+                pause(1000);
             }
             break;
 
-            case SOCGame.PLACING_FREE_ROAD2:
+        case SOCGame.PLACING_FREE_ROAD1:
+            if (ourTurn && (! waitingForOurTurn) && (expectPLACING_FREE_ROAD1))
             {
-                if (ourTurn && (! waitingForOurTurn) && (expectPLACING_FREE_ROAD2))
-                {
-                    expectPLACING_FREE_ROAD2 = false;
-                    waitingForGameState = true;
-                    counter = 0;
-                    expectPLAY1 = true;
+                expectPLACING_FREE_ROAD1 = false;
+                waitingForGameState = true;
+                counter = 0;
+                expectPLACING_FREE_ROAD2 = true;
 
-                    SOCPossiblePiece posPiece = buildingPlan.pop();
-
-                    if (posPiece.getType() == SOCPossiblePiece.ROAD)
-                        whatWeWantToBuild = new SOCRoad(ourPlayerData, posPiece.getCoordinates(), null);
-                    else
-                        whatWeWantToBuild = new SOCShip(ourPlayerData, posPiece.getCoordinates(), null);
-
-                    // D.ebugPrintln("posPiece = " + posPiece);
-                    // D.ebugPrintln("$ POPPED OFF");
-                    // D.ebugPrintln("!!! PUTTING PIECE 2 " + whatWeWantToBuild + " !!!");
-                    pause(500);
-                    client.putPiece(game, whatWeWantToBuild);
-                    pause(1000);
-                }
+                // D.ebugPrintln("!!! PUTTING PIECE 1 " + whatWeWantToBuild + " !!!");
+                pause(500);
+                client.putPiece(game, whatWeWantToBuild);  // either ROAD or SHIP
+                pause(1000);
             }
             break;
 
-            case SOCGame.START1A:
+        case SOCGame.PLACING_FREE_ROAD2:
+            if (ourTurn && (! waitingForOurTurn) && (expectPLACING_FREE_ROAD2))
+            {
+                expectPLACING_FREE_ROAD2 = false;
+                waitingForGameState = true;
+                counter = 0;
+                expectPLAY1 = true;
+
+                SOCPossiblePiece posPiece = buildingPlan.pop();
+
+                if (posPiece.getType() == SOCPossiblePiece.ROAD)
+                    whatWeWantToBuild = new SOCRoad(ourPlayerData, posPiece.getCoordinates(), null);
+                else
+                    whatWeWantToBuild = new SOCShip(ourPlayerData, posPiece.getCoordinates(), null);
+
+                // D.ebugPrintln("posPiece = " + posPiece);
+                // D.ebugPrintln("$ POPPED OFF");
+                // D.ebugPrintln("!!! PUTTING PIECE 2 " + whatWeWantToBuild + " !!!");
+                pause(500);
+                client.putPiece(game, whatWeWantToBuild);
+                pause(1000);
+            }
+            break;
+
+        case SOCGame.START1A:
             {
                 expectSTART1A = false;
 
@@ -2498,7 +2503,7 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.START1B:
+        case SOCGame.START1B:
             {
                 expectSTART1B = false;
 
@@ -2514,7 +2519,7 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.START2A:
+        case SOCGame.START2A:
             {
                 expectSTART2A = false;
 
@@ -2538,7 +2543,7 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.START2B:
+        case SOCGame.START2B:
             {
                 expectSTART2B = false;
 
@@ -2554,7 +2559,7 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.START3A:
+        case SOCGame.START3A:
             {
                 expectSTART3A = false;
 
@@ -2570,7 +2575,7 @@ public class SOCRobotBrain extends Thread
             }
             break;
 
-            case SOCGame.START3B:
+        case SOCGame.START3B:
             {
                 expectSTART3B = false;
 
@@ -3394,6 +3399,7 @@ public class SOCRobotBrain extends Thread
      * For initial placement of our own pieces, this method also checks
      * and clears expectPUTPIECE_FROM_START1A, and sets expectSTART1B, etc.
      * The final initial putpiece clears expectPUTPIECE_FROM_START2B and sets expectROLL_OR_CARD.
+     * As part of the PUTPIECE request, brain set those expectPUTPIECE flags in {@link #placeIfExpectPlacing()}.
      *<P>
      * For initial settlements, won't track here:
      * Delay tracking until the corresponding road is placed,
@@ -3520,7 +3526,7 @@ public class SOCRobotBrain extends Thread
 
     /**
      * Have the client ask to build our top planned piece
-     * {@link #buildingPlan}{@link Stack#pop() .pop()},
+     * (calls {@link #buildingPlan}{@link Stack#pop() .pop()}),
      * unless we've already been told by the server to not build it.
      * Sets {@link #whatWeWantToBuild}, {@link #waitingForDevCard},
      * or {@link #waitingForPickSpecialItem}.
@@ -3529,8 +3535,16 @@ public class SOCRobotBrain extends Thread
      * Checks against {@link #whatWeFailedToBuild} to see if server has rejected this already.
      * Calls <tt>client.buyDevCard()</tt> or <tt>client.buildRequest()</tt>.
      * Sets {@link #waitingForDevCard} or {@link #waitingForPickSpecialItem},
-     * or sets {@link #waitingForGameState} and {@link #expectPLACING_SETTLEMENT} (etc).
+     * or sets {@link #waitingForGameState} and a flag like {@link #expectPLACING_SETTLEMENT} (etc).
+     *<P>
+     * Preconditions: Call only when:
+     *<UL>
+     * <LI> Gamestate is {@link SOCGame#PLAY1} or {@link SOCGame#SPECIAL_BUILDING}
+     * <LI> <tt>! ({@link #waitingForTradeMsg} || {@link #waitingForTradeResponse})</tt>
+     * <LI> ourPlayerData.getResources().{@link SOCResourceSet#contains(soc.game.ResourceSet) contains}(targetPieceResources)
+     *</UL>
      *
+     * @see #placeIfExpectPlacing()
      * @since 1.1.08
      */
     private void buildRequestPlannedPiece()
@@ -4275,9 +4289,22 @@ public class SOCRobotBrain extends Thread
      *  Also handles illegal requests to buy development cards
      *  (piece type -2 in {@link SOCCancelBuildRequest}).
      *<P>
+     *  Must update game data by calling {@link SOCGame#setGameState(int)} before calling this method.
+     *<P>
      *  This method increments {@link #failedBuildingAttempts},
      *  but won't leave the game if we've failed too many times.
      *  The brain's run loop should make that decision.
+     *<UL>
+     * <LI> If {@link SOCGame#getGameState()} is {@link SOCGame#PLAY1},
+     *   server likely denied us due to resources, not due to building plan
+     *   being interrupted by another player's building before our special building phase.
+     *   (Could also be due to a bug in the chosen building plan.)
+     *   Will clear our building plan so we'll make a new one.
+     * <LI> In other gamestates, assumes requested piece placement location was illegal.
+     *   Will call {@link #cancelWrongPiecePlacementLocal(SOCPlayingPiece)}
+     *   so we don't try again to build there.
+     * <LI> Either way, sends a {@link CancelBuildRequest} message to the server.
+     *</UL>
      *
      * @param mes  Cancel message from server, including piece type
      */
@@ -4320,6 +4347,7 @@ public class SOCRobotBrain extends Thread
                 if (whatWeWantToBuild != null)
                     coord = whatWeWantToBuild.getCoordinates();
             }
+
             if (coord != -1)
             {
                 SOCPlayingPiece cancelPiece;
@@ -4441,7 +4469,7 @@ public class SOCRobotBrain extends Thread
      * Take this piece out of trackers, without sending any response back to the server.
      *<P>
      * This method invalidates that piece in trackers, so we don't try again to
-     * build it. Since we treat it like another player's new placement, we
+     * build there. Since we treat it like another player's new placement, we
      * can remove any of our planned pieces depending on this one.
      *<P>
      * Also calls {@link SOCPlayer#clearPotentialSettlement(int)},
