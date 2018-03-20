@@ -72,6 +72,8 @@ import soc.message.SOCTurn;
 
 import soc.server.database.SOCDBHelper;
 
+import soc.state.SOCPlayerState;
+
 import soc.util.CappedQueue;
 import soc.util.DebugRecorder;
 import soc.util.Queue;
@@ -674,6 +676,8 @@ public class SOCRobotBrain extends Thread
 
     protected boolean hasPlacedThirdSettlement;
 
+    protected SOCPlayerState state;
+
     /**
      * Create a robot brain to play a game.
      *<P>
@@ -1105,6 +1109,7 @@ public class SOCRobotBrain extends Thread
         if (pinger != null)
         {
             pinger.start();
+            state = new SOCPlayerState(game.getBoard());
 
             //
             // Along with actual game events, the pinger sends a TIMINGPING message
@@ -1201,6 +1206,7 @@ public class SOCRobotBrain extends Thread
                         //
                         // reset the selling flags and offers history
                         //
+                        
                         if (robotParameters.getTradeFlag() == 1)
                         {
                             doneTrading = false;
@@ -1740,6 +1746,7 @@ public class SOCRobotBrain extends Thread
                                        || (waitingForPickSpecialItem != null)))
                                 {
                                     // Any last things for turn from game's scenario?
+                                    
                                     boolean scenActionTaken = false;
                                     if (game.isGameOptionSet(SOCGameOption.K_SC_FTRI)
                                         || game.isGameOptionSet(SOCGameOption.K_SC_PIRI))
@@ -2016,6 +2023,7 @@ public class SOCRobotBrain extends Thread
                        }
                        }
                      */
+                    
                     yield();
                 }
                 catch (Exception e)
@@ -2039,7 +2047,7 @@ public class SOCRobotBrain extends Thread
         {
             System.out.println("AGG! NO PINGER!");
         }
-
+        System.out.println("ASDFADSFASF" + state);
         //D.ebugPrintln("STOPPING AND DEALLOCATING");
         gameEventQ = null;
         
@@ -2048,7 +2056,6 @@ public class SOCRobotBrain extends Thread
         } catch (Exception e){
         	System.err.println("Error saving initial settlements: " + e);
         }
-        
         client.addCleanKill();
         client = null;
 
@@ -2340,7 +2347,6 @@ public class SOCRobotBrain extends Thread
                         ourPlayerData.thirdSettlementCoord = whatWeWantToBuild.getCoordinates();
                         hasPlacedThirdSettlement = true; 
                     }
-
                     try {
                         SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", whatWeWantToBuild.getCoordinates());
                     } catch(Exception e) {
@@ -2352,6 +2358,11 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
+                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " + 
+                            ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
+                           + " " + ourPlayerData.hasUnplayedDevCards() );
+                    state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                    System.out.println(ourPlayerName + " SETTLEMENT " + state);
                 }
             }
             break;
@@ -2368,6 +2379,11 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
+                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " + 
+                            ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
+                           + " " + ourPlayerData.hasUnplayedDevCards() );
+                    state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                    System.out.println(ourPlayerName + " ROAD " + state);
                 }
             }
             break;
@@ -2392,6 +2408,11 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
+                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " + 
+                            ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
+                           + " " + ourPlayerData.hasUnplayedDevCards() );
+                    state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                    System.out.println(ourPlayerName + " city " + state);
                 }
             }
             break;
@@ -2512,6 +2533,7 @@ public class SOCRobotBrain extends Thread
                         e.printStackTrace();
                     }
                     placeInitSettlement(secondSettleNode);
+                    System.out.println(state);
                 }
             }
             break;
@@ -2543,6 +2565,7 @@ public class SOCRobotBrain extends Thread
                     waitingForGameState = true;
                     final int secondSettleNode = openingBuildStrategy.planSecondSettlement();  // TODO planThirdSettlement
                     placeInitSettlement(secondSettleNode);
+                    System.out.println(state);
                 }
             }
             break;
@@ -2564,6 +2587,8 @@ public class SOCRobotBrain extends Thread
             break;
 
         }
+
+        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
     }
 
     /**
@@ -2585,6 +2610,8 @@ public class SOCRobotBrain extends Thread
         counter = 0;
         client.playDevCard(game, SOCDevCardConstants.KNIGHT);
         pause(1500);
+        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        System.out.println(ourPlayerName + " KNIGHT " + state);
     }
 
     /**
@@ -2737,6 +2764,8 @@ public class SOCRobotBrain extends Thread
 
                         //D.ebugPrintln("!! PLAYING ROAD BUILDING CARD");
                         client.playDevCard(game, SOCDevCardConstants.ROADS);
+                        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                        System.out.println(ourPlayerName + " PLAY DEV " + state);
                     } else {
                         // We already tried to build this.
                         roadBuildingPlan = false;
@@ -2792,6 +2821,8 @@ public class SOCRobotBrain extends Thread
                 counter = 0;
                 client.playDevCard(game, SOCDevCardConstants.DISC);
                 pause(1500);
+                state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                System.out.println(ourPlayerName + " PLAY DEV " + state);
             }
         }
 
@@ -2815,6 +2846,8 @@ public class SOCRobotBrain extends Thread
                 counter = 0;
                 client.playDevCard(game, SOCDevCardConstants.MONO);
                 pause(1500);
+                state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                System.out.println(ourPlayerName + " PLAY DEV " + state);
             }
 
             if (! expectWAITING_FOR_MONOPOLY)
@@ -3005,6 +3038,8 @@ public class SOCRobotBrain extends Thread
 
         default:
             SOCDisplaylessPlayerClient.handlePUTPIECE(mes, game);
+            //state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+            //System.out.println(ourPlayerName + " PUTPIECE: " + mes.getPieceType() + "  " + state);
             break;
         }
     }
@@ -3510,6 +3545,8 @@ public class SOCRobotBrain extends Thread
         {
         case SOCPossiblePiece.CARD:
             client.buyDevCard(game);
+            state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+            System.out.println(ourPlayerName + " BUY DEV " +state);
             waitingForDevCard = true;
 
             break;
@@ -4510,6 +4547,8 @@ public class SOCRobotBrain extends Thread
         lastStartingPieceCoord = ourPlayerData.firstSettlementCoord = firstSettlement;
         client.putPiece(game, new SOCSettlement(ourPlayerData, firstSettlement, null));
         pause(1000);
+        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        System.out.println(ourPlayerName + " SETTLEMENT " + state);
     }
 
     /**
@@ -4539,6 +4578,8 @@ public class SOCRobotBrain extends Thread
         lastStartingPieceCoord = ourPlayerData.secondSettlementCoord = initSettlement;
         client.putPiece(game, new SOCSettlement(ourPlayerData, initSettlement, null));
         pause(1000);
+        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        System.out.println(ourPlayerName + " SETTLEMENT " + state);
     }
 
     /**
@@ -4567,6 +4608,8 @@ public class SOCRobotBrain extends Thread
         lastStartingRoadTowardsNode = openingBuildStrategy.getPlannedInitRoadDestinationNode();
         client.putPiece(game, new SOCRoad(ourPlayerData, roadEdge, null));
         pause(1000);
+        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        System.out.println(ourPlayerName + " ROAD " + state);
     }
 
     /**
