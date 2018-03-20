@@ -2233,6 +2233,10 @@ public class SOCPlayerInterface extends Frame
      */
     public void updateAtTurn(final int pnum)
     {
+        SOCPlayer pl = game.getPlayer(pnum);
+        System.out.println("Current Player is: " + pnum);
+        SOCResourceSet rs = pl.getResources();
+        System.out.println("Player " + pnum + " resources are: " + rs);
         if ((pnum >= 0) && (pnum < hands.length))
             getPlayerHandPanel(pnum).updateDevCards(false);
 
@@ -2240,6 +2244,7 @@ public class SOCPlayerInterface extends Frame
         {
             // hilight current player, update takeover button
             getPlayerHandPanel(i).updateAtTurn();
+
         }
 
         boardPanel.updateMode();

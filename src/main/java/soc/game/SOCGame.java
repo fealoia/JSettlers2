@@ -100,6 +100,7 @@ public class SOCGame implements Serializable, Cloneable
      * The main game class has a serialVersionUID; pieces and players don't.
      * Currently we don't expect to persist a game between versions.
      */
+
     private static final long serialVersionUID = 2000L;  // Last structural change in v2.0.00
 
     /**
@@ -1124,6 +1125,11 @@ public class SOCGame implements Serializable, Cloneable
     private int turnCount;
 
     /**
+    * We only want to update the database on a round to round basis so we need this variable to see when the round changes
+    **/
+    public int currentRound;
+
+    /**
      * The number of normal rounds (each player has 1 turn per round, after initial placements), including this round.
      *  for gameoption N7: Roll no 7s during first # rounds.
      *  This is 0 during initial piece placement, and 1 when the first player is about to
@@ -1275,6 +1281,7 @@ public class SOCGame implements Serializable, Cloneable
         gameState = NEW;
         turnCount = 0;
         roundCount = 0;
+        currentRound = 0;
         forcingEndTurn = false;
         askedSpecialBuildPhase = false;
         placingRobberForKnightCard = false;
@@ -4330,6 +4337,14 @@ public class SOCGame implements Serializable, Cloneable
      */
     public void updateAtTurn()
     {
+        if (roundCount == currentRound){
+            System.out.println("Starting Round: " + roundCount);
+            currentRound++;
+            SOCBoard currentBoard = getBoard();
+            System.out.println(currentBoard);
+            
+        }
+
         if (firstPlayerNumber == -1)
             setFirstPlayer(currentPlayerNumber);  // also sets lastPlayerNumber
 
@@ -4351,6 +4366,7 @@ public class SOCGame implements Serializable, Cloneable
         if (gameState == ROLL_OR_CARD)
         {
             ++turnCount;
+
             if (currentPlayerNumber == firstPlayerNumber)
                 ++roundCount;
 
@@ -4361,6 +4377,7 @@ public class SOCGame implements Serializable, Cloneable
                 for (int pl = 0; pl < maxPlayers; ++pl)
                     players[pl].setSpecialBuilt(false);
             }
+
         } else if (gameState == SPECIAL_BUILDING)
         {
             // Set player's flag: active in this Special Building Phase
