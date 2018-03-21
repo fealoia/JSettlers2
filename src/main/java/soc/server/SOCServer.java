@@ -2473,9 +2473,9 @@ public class SOCServer extends Server
             // handleIMAROBOT will give them SOCServer.ROBOT_PARAMS_SMARTER
             // based on their name prefixes being "robot " not "droid ".
 
-            for (int i = 0; i < numSmart; ++i)
+            for (int i = 0; i < numSmart+numFast; ++i)
             {
-                String rname = "robot " + (i+1+numFast);
+                String rname = "robot " + (i+1);
                 SOCLocalRobotClient.createAndStartRobotClientThread(rname, strSocketName, port, robotCookie);
                     // includes yield() and sleep(75 ms) this thread.
             }
