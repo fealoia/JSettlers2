@@ -1207,7 +1207,7 @@ public class SOCRobotBrain extends Thread
                         //
                         // reset the selling flags and offers history
                         //
-                        
+
                         if (robotParameters.getTradeFlag() == 1)
                         {
                             doneTrading = false;
@@ -1746,7 +1746,7 @@ public class SOCRobotBrain extends Thread
                                        || (waitingForPickSpecialItem != null)))
                                 {
                                     // Any last things for turn from game's scenario?
-                                    
+
                                     boolean scenActionTaken = false;
                                     if (game.isGameOptionSet(SOCGameOption.K_SC_FTRI)
                                         || game.isGameOptionSet(SOCGameOption.K_SC_PIRI))
@@ -2023,7 +2023,7 @@ public class SOCRobotBrain extends Thread
                        }
                        }
                      */
-                    
+
                     yield();
                 }
                 catch (Exception e)
@@ -2050,7 +2050,7 @@ public class SOCRobotBrain extends Thread
         System.out.println("ASDFADSFASF" + state);
         //D.ebugPrintln("STOPPING AND DEALLOCATING");
         gameEventQ = null;
-        
+
         try {
                 SOCDBHelper.saveInitialSettlements(ourPlayerData);
         } catch (Exception e){
@@ -2355,7 +2355,7 @@ public class SOCRobotBrain extends Thread
 
                     if (hasPlacedThirdSettlement == false) {
                         ourPlayerData.thirdSettlementCoord = whatWeWantToBuild.getCoordinates();
-                        hasPlacedThirdSettlement = true; 
+                        hasPlacedThirdSettlement = true;
                     }
                     try {
                         SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", whatWeWantToBuild.getCoordinates());
@@ -2368,7 +2368,7 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " + 
+                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " +
                             ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
                            + " " + ourPlayerData.hasUnplayedDevCards() );
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
@@ -2388,13 +2388,13 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " + 
+                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " +
                             ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
                            + " " + ourPlayerData.hasUnplayedDevCards() );
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
                     System.out.println(ourPlayerName + " ROAD " + state);
-                }
             }
+
             break;
 
         case SOCGame.PLACING_CITY:
@@ -2407,8 +2407,8 @@ public class SOCRobotBrain extends Thread
                     counter = 0;
                     expectPLAY1 = true;
                     ourPlayerData.numCities++;
-                   
-                    try { 
+
+                    try {
                         SOCDBHelper.savePlacement(ourPlayerData, "CITY", whatWeWantToBuild.getCoordinates());
                     } catch(Exception e) {
         	        System.err.println("Error saving placement: " + e);
@@ -2418,7 +2418,7 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " + 
+                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " +
                             ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
                            + " " + ourPlayerData.hasUnplayedDevCards() );
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
@@ -2587,13 +2587,14 @@ public class SOCRobotBrain extends Thread
                     waitingForOurTurn = true;  // ignore next player's GameState(START3A) message seen before Turn(nextPN)
                     pause(1500);
                     planAndPlaceInitRoad();
+
                 }
             }
             break;
 
         }
 
-        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+          state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
     }
 
     /**
