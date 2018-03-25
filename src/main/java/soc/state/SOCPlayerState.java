@@ -195,10 +195,6 @@ public class SOCPlayerState {
 													relativeWheat + relativeWheat*(wheatPort));
 		}
 
-		System.out.println(longestRoadEval);
-		System.out.println(knightEval);
-		System.out.println(opponentRoadAwayEval);
-		System.out.println(resourceEval);
 		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval;
 		return sum;
 	}
