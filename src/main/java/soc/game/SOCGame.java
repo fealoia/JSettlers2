@@ -4338,11 +4338,11 @@ public class SOCGame implements Serializable, Cloneable
     public void updateAtTurn()
     {
         if (roundCount == currentRound){
-            System.out.println("Starting Round: " + roundCount);
+            //System.out.println("Starting Round: " + roundCount);
             currentRound++;
             SOCBoard currentBoard = getBoard();
-            System.out.println(currentBoard);
-            
+          //  System.out.println(currentBoard);
+
         }
 
         if (firstPlayerNumber == -1)

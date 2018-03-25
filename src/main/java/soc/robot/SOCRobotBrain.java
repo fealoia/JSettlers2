@@ -679,6 +679,8 @@ public class SOCRobotBrain extends Thread
 
     protected SOCPlayerState state;
 
+    protected double eval;
+
     /**
      * Create a robot brain to play a game.
      *<P>
@@ -2372,7 +2374,14 @@ public class SOCRobotBrain extends Thread
                             ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
                            + " " + ourPlayerData.hasUnplayedDevCards() );
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-                    System.out.println(ourPlayerName + " SETTLEMENT " + state);
+                    eval = state.evalFunction();
+                    System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
+                    try {
+                      SOCDBHelper.saveState(ourPlayerData, state, "BUILT SETTLEMENT");
+                    }
+                    catch (Exception e){
+	                     System.err.println("Error updating on settlement:" + e);
+                    }
                 }
             }
             break;
@@ -2392,7 +2401,14 @@ public class SOCRobotBrain extends Thread
                             ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
                            + " " + ourPlayerData.hasUnplayedDevCards() );
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-                    System.out.println(ourPlayerName + " ROAD " + state);
+                    eval = state.evalFunction();
+                    System.out.println(ourPlayerName + " ROAD " + state + eval);
+                    try {
+                      SOCDBHelper.saveState(ourPlayerData, state, "BUILT ROAD");
+                    }
+                    catch (Exception e){
+	                     System.err.println("Error updating on road:" + e);
+                    }
             }
 
             break;
@@ -2422,7 +2438,14 @@ public class SOCRobotBrain extends Thread
                             ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
                            + " " + ourPlayerData.hasUnplayedDevCards() );
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-                    System.out.println(ourPlayerName + " city " + state);
+                    eval = state.evalFunction();
+                    System.out.println(ourPlayerName + " city " + state + eval);
+                    try {
+                      SOCDBHelper.saveState(ourPlayerData, state, "BUILT CITY");
+                    }
+                    catch (Exception e){
+	                     System.err.println("Error updating on city:" + e);
+                    }
                 }
             }
             break;
@@ -2499,6 +2522,7 @@ public class SOCRobotBrain extends Thread
                         e.printStackTrace();
                     }
                     placeFirstSettlement(firstSettleNode);
+
                 }
             }
             break;
@@ -2617,7 +2641,14 @@ public class SOCRobotBrain extends Thread
         client.playDevCard(game, SOCDevCardConstants.KNIGHT);
         pause(1500);
         state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-        System.out.println(ourPlayerName + " KNIGHT " + state);
+        eval = state.evalFunction();
+        System.out.println(ourPlayerName + " KNIGHT " + state + eval);
+        try {
+          SOCDBHelper.saveState(ourPlayerData, state, "PLAYED KNIGHT");
+        }
+        catch (Exception e){
+           System.err.println("Error updating on knight:" + e);
+        }
     }
 
     /**
@@ -2771,7 +2802,14 @@ public class SOCRobotBrain extends Thread
                         //D.ebugPrintln("!! PLAYING ROAD BUILDING CARD");
                         client.playDevCard(game, SOCDevCardConstants.ROADS);
                         state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-                        System.out.println(ourPlayerName + " PLAY DEV " + state);
+                        eval = state.evalFunction();
+                        System.out.println(ourPlayerName + " PLAY DEV (road builder) " + state + eval);
+                        try {
+                          SOCDBHelper.saveState(ourPlayerData, state, "PLAY ROAD BUILDER");
+                        }
+                        catch (Exception e){
+    	                     System.err.println("Error updating on playing road builder:" + e);
+                        }
                     } else {
                         // We already tried to build this.
                         roadBuildingPlan = false;
@@ -2828,7 +2866,15 @@ public class SOCRobotBrain extends Thread
                 client.playDevCard(game, SOCDevCardConstants.DISC);
                 pause(1500);
                 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-                System.out.println(ourPlayerName + " PLAY DEV " + state);
+                eval = state.evalFunction();
+                System.out.println(ourPlayerName + " PLAY DEV (year of plenty)" + state + eval);
+                try {
+                  SOCDBHelper.saveState(ourPlayerData, state, "PLAY YEAR OF PLENTY");
+                }
+                catch (Exception e){
+                   System.err.println("Error updating on playing year of plenty:" + e);
+                }
+
             }
         }
 
@@ -2853,7 +2899,14 @@ public class SOCRobotBrain extends Thread
                 client.playDevCard(game, SOCDevCardConstants.MONO);
                 pause(1500);
                 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-                System.out.println(ourPlayerName + " PLAY DEV " + state);
+                eval = state.evalFunction();
+                System.out.println(ourPlayerName + " PLAY DEV (monopoly)" + state + eval);
+                try {
+                  SOCDBHelper.saveState(ourPlayerData, state, "PLAY MONOPOLY");
+                }
+                catch (Exception e){
+                   System.err.println("Error updating on playing monopoly:" + e);
+                }
             }
 
             if (! expectWAITING_FOR_MONOPOLY)
@@ -3561,8 +3614,15 @@ public class SOCRobotBrain extends Thread
         case SOCPossiblePiece.CARD:
             client.buyDevCard(game);
             state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-            System.out.println(ourPlayerName + " BUY DEV " +state);
+            eval = state.evalFunction();
+            System.out.println(ourPlayerName + " BUY DEV " +state + eval);
             waitingForDevCard = true;
+            try {
+              SOCDBHelper.saveState(ourPlayerData, state, "BUY DEV CARD");
+            }
+            catch (Exception e){
+               System.err.println("Error updating on buying dev card:" + e);
+            }
 
             break;
 
@@ -4577,7 +4637,14 @@ public class SOCRobotBrain extends Thread
         client.putPiece(game, new SOCSettlement(ourPlayerData, firstSettlement, null));
         pause(1000);
         state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-        System.out.println(ourPlayerName + " SETTLEMENT " + state);
+        eval = state.evalFunction();
+        System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
+        try {
+          SOCDBHelper.saveState(ourPlayerData, state, "BUILT FIRST SETTLEMENT");
+        }
+        catch (Exception e){
+           System.err.println("Error updating on first settlement:" + e);
+        }
     }
 
     /**
@@ -4608,7 +4675,14 @@ public class SOCRobotBrain extends Thread
         client.putPiece(game, new SOCSettlement(ourPlayerData, initSettlement, null));
         pause(1000);
         state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-        System.out.println(ourPlayerName + " SETTLEMENT " + state);
+        eval = state.evalFunction();
+        System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
+        try {
+          SOCDBHelper.saveState(ourPlayerData, state, "BUILT SECOND SETTLEMENT");
+        }
+        catch (Exception e){
+           System.err.println("Error updating on second settlement:" + e);
+        }
     }
 
     /**
@@ -4638,7 +4712,14 @@ public class SOCRobotBrain extends Thread
         client.putPiece(game, new SOCRoad(ourPlayerData, roadEdge, null));
         pause(1000);
         state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-        System.out.println(ourPlayerName + " ROAD " + state);
+        eval = state.evalFunction();
+        System.out.println(ourPlayerName + " ROAD " + state + eval);
+        try {
+          SOCDBHelper.saveState(ourPlayerData, state, "BUILT INITIAL ROAD");
+        }
+        catch (Exception e){
+           System.err.println("Error updating on building road:" + e);
+        }
     }
 
     /**

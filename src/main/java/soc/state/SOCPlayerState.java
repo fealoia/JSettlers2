@@ -15,11 +15,22 @@ public class SOCPlayerState {
 	protected int relativeKnightsPlayed;
 	protected int opponentRoadsAway;
 	protected int victoryPoints;
+	protected int clayPort;
+	protected int orePort;
+	protected int sheepPort;
+	protected int wheatPort;
+	protected int woodPort;
+	protected int miscPort;
+	protected int opponentRoadAwayEval;
 	protected double relativeClay;
 	protected double relativeOre;
 	protected double relativeSheep;
 	protected double relativeWheat;
 	protected double relativeWood;
+	protected double longestRoadEval;
+	protected double knightEval;
+	protected double sum;
+	protected double resourceEval;
 	protected boolean portClay;
 	protected boolean portOre;
 	protected boolean portSheep;
@@ -148,6 +159,84 @@ public class SOCPlayerState {
 		portWood = player.getPortFlag(SOCBoard.WOOD_PORT);
 		portMisc = player.getPortFlag(SOCBoard.MISC_PORT);
 	}
+
+	public double evalFunction(){
+
+		longestRoadEval = Math.cbrt(200*relativeLongestRoadLength);
+		knightEval = Math.cbrt(400*relativeKnightsPlayed);
+
+		if (opponentRoadsAway == Integer.MAX_VALUE)
+			opponentRoadAwayEval = 7;
+		else if(opponentRoadsAway == 3)
+			opponentRoadAwayEval = 5;
+		else if(opponentRoadsAway == 2)
+			opponentRoadAwayEval = 2;
+		else if(opponentRoadsAway == 1)
+			opponentRoadAwayEval = -1;
+
+		clayPort = (portClay) ? 1 : 0;
+		orePort = (portOre) ? 1 : 0;
+		sheepPort = (portSheep) ? 1 : 0;
+		wheatPort = (portWheat) ? 1 : 0;
+		woodPort = (portWood) ? 1 : 0;
+
+		if (portMisc){
+			resourceEval =  13*(relativeOre + relativeOre*(orePort) +
+													relativeClay + relativeClay*(clayPort) +
+													relativeWood + relativeWood*(woodPort) +
+													relativeSheep + relativeSheep*(sheepPort) +
+													relativeWheat + relativeWheat*(wheatPort));
+		}
+		else{
+			resourceEval =  8*(relativeOre + relativeOre*(orePort) +
+													relativeClay + relativeClay*(clayPort) +
+													relativeWood + relativeWood*(woodPort) +
+													relativeSheep + relativeSheep*(sheepPort) +
+													relativeWheat + relativeWheat*(wheatPort));
+		}
+
+		System.out.println(longestRoadEval);
+		System.out.println(knightEval);
+		System.out.println(opponentRoadAwayEval);
+		System.out.println(resourceEval);
+		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval;
+		return sum;
+	}
+
+	//accessor Methods
+	public int getRelLongestRoad(){
+		return relativeLongestRoadLength;
+	}
+
+	public int getRelKnightsPlayed(){
+		return relativeKnightsPlayed;
+	}
+
+	public int getopponentRoadsAway(){
+		return opponentRoadsAway;
+	}
+
+	public String getRelativeResources(){
+		StringBuilder rel = new StringBuilder();
+		rel.append(Double.toString(relativeClay) + "\',");
+		rel.append("\'" + Double.toString(relativeOre) + "\',");
+		rel.append("\'" + Double.toString(relativeSheep) + "\',");
+		rel.append("\'" + Double.toString(relativeWheat) + "\',");
+		rel.append("\'" + Double.toString(relativeWood));
+		return rel.toString();
+	}
+
+	public String getPorts(){
+		StringBuilder rel = new StringBuilder();
+		rel.append(String.valueOf(portClay) + "\',");
+		rel.append("\'" + String.valueOf(portOre) + "\',");
+		rel.append("\'" + String.valueOf(portSheep) + "\',");
+		rel.append("\'" + String.valueOf(portWheat) + "\',");
+		rel.append("\'" + String.valueOf(portWood) + "\',");
+		rel.append("\'" + String.valueOf(portMisc));
+		return rel.toString();
+	}
+
 
 	public String toString() {
 		return "{" + victoryPoints + ", " + relativeLongestRoadLength + ", " + relativeKnightsPlayed + ", " + opponentRoadsAway + ", [" +
