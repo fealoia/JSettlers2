@@ -24,7 +24,6 @@ package soc.robot;
 
 import soc.baseclient.SOCDisplaylessPlayerClient;
 import soc.disableDebug.D;
-
 import soc.game.SOCBoard;
 import soc.game.SOCBoardLarge;
 import soc.game.SOCCity;
@@ -42,7 +41,6 @@ import soc.game.SOCSettlement;
 import soc.game.SOCShip;
 import soc.game.SOCSpecialItem;
 import soc.game.SOCTradeOffer;
-
 import soc.message.SOCAcceptOffer;
 import soc.message.SOCBankTrade;
 import soc.message.SOCCancelBuildRequest;
@@ -70,11 +68,8 @@ import soc.message.SOCSitDown;  // for javadoc
 import soc.message.SOCStartGame;
 import soc.message.SOCTimingPing;  // for javadoc
 import soc.message.SOCTurn;
-
 import soc.server.database.SOCDBHelper;
-
 import soc.state.SOCPlayerState;
-
 import soc.util.CappedQueue;
 import soc.util.DebugRecorder;
 import soc.util.Queue;
@@ -83,6 +78,7 @@ import soc.util.SOCRobotParameters;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -2311,6 +2307,45 @@ public class SOCRobotBrain extends Thread
             playKnightCard();  // sets expectPLACING_ROBBER, waitingForGameState
         }
     }
+    
+    private void playerOptions(SOCPlayer player) {
+    	// ToDo: Discuss what to do about Dev cards
+    	SOCGame game = player.game;
+    	
+    	@SuppressWarnings("unchecked")
+		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+    	for(Integer settlement : settlements) {
+    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
+    		 game.putTempPiece(temp);
+        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+    		 System.out.println("Possibile Settlement Eval: " + state.evalFunction());
+    		 game.undoPutTempPiece(temp);
+    	 } 	 
+    	
+    	@SuppressWarnings("unchecked")
+		HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialSettlements().clone();
+    	for(Integer road : roads) {
+    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
+   		 	game.putTempPiece(temp);
+   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   		 	System.out.println("Possibile Road1 Eval: " + state.evalFunction());
+   		 	game.undoPutTempPiece(temp);
+   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+    	}
+    	
+    	@SuppressWarnings("unchecked")
+		HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
+    	for(Integer city : cities) {
+    		SOCCity temp = new SOCCity(player, city, game.getBoard());
+   		 	game.putTempPiece(temp);
+   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   		 	System.out.println("Possibile City1 Eval: " + state.evalFunction());
+   		 	game.undoPutTempPiece(temp);
+   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+    	}
+    	
+    	
+    }
 
     /**
      * If it's our turn and we have an expect flag set
@@ -2370,9 +2405,7 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " +
-                            ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
-                           + " " + ourPlayerData.hasUnplayedDevCards() );
+                    playerOptions(ourPlayerData);
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
                     eval = state.evalFunction();
                     System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
@@ -2397,9 +2430,7 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " +
-                            ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
-                           + " " + ourPlayerData.hasUnplayedDevCards() );
+                    playerOptions(this.ourPlayerData);
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
                     eval = state.evalFunction();
                     System.out.println(ourPlayerName + " ROAD " + state + eval);
@@ -2434,9 +2465,8 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    System.out.println("POSSIBILITIES for " + ourPlayerData.getName() + " " +
-                            ourPlayerData.hasPotentialRoad() + " " + ourPlayerData.hasPotentialSettlement() + " " + ourPlayerData.hasPotentialCity()
-                           + " " + ourPlayerData.hasUnplayedDevCards() );
+                    playerOptions(this.ourPlayerData);
+
                     state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
                     eval = state.evalFunction();
                     System.out.println(ourPlayerName + " city " + state + eval);

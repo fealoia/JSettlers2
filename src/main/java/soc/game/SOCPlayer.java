@@ -3922,6 +3922,11 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
             pset[i] = it.next().intValue();
         return pset;
     }
+    
+    public HashSet<Integer> getPotentialRoads()
+    {
+        return potentialRoads;
+    }
 
     /**
      * Set which nodes are potential settlements.
@@ -4411,6 +4416,10 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
     public boolean hasPotentialCity()
     {
         return ! potentialCities.isEmpty();
+    }
+
+    public HashSet<Integer> getPotentialCities() {
+        return potentialCities;
     }
 
     /**
