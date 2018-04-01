@@ -26,6 +26,7 @@ import soc.game.SOCGameOption;
 import soc.game.SOCPlayer;
 import soc.server.SOCServer;  // solely for javadocs and ROBOT_PARAMS_*
 import soc.util.SOCRobotParameters;
+import soc.state.SOCPlayerState;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -1793,7 +1794,7 @@ public class SOCDBHelper
                     final String optsStr = (opts == null) ? null : SOCGameOption.packOptionsToString(opts, false);
                     saveGameCommand.setString(i, optsStr);
                 }
-                
+
                 saveGameCommand.executeUpdate();
 
                 return true;
@@ -1808,7 +1809,7 @@ public class SOCDBHelper
 
         return false;
     }
-    
+
     public static void savePlacement(final SOCPlayer pl, final String type, final int coordinate) throws SQLException {
     	if (testOne_doesTableExist("allPlacements", true, false) == false) {
             String sql = "CREATE TABLE allPlacements(" +
@@ -1819,14 +1820,14 @@ public class SOCDBHelper
                 "placementResourceThree INT, placementNumberThree INT);";
             try {
                 runDDL(sql);
-            }   
+            }
             catch (SQLException se) {
                     throw se;
             }
         }
     	SOCBoard board = pl.game.getBoard();
         StringBuilder sql = new StringBuilder();
-        
+
         sql.append("INSERT into allPlacements VALUES(");
         sql.append("\'" + pl.game.getName() + "\',");
         sql.append("\'" + pl.getName() + "\',");
@@ -1854,11 +1855,11 @@ public class SOCDBHelper
             	sql.append(')');
             	System.out.println(sql.toString());
                 runDDL(sql.toString());
-            }   
+            }
             catch (SQLException se) {
             		se.printStackTrace();
                     throw se;
-            }             
+            }
     }
 
     public static void saveInitialSettlements(final SOCPlayer pl) throws SQLException {
@@ -1879,7 +1880,7 @@ public class SOCDBHelper
                 "thirdPlacementResourceThree INT, thirdPlacementNumberthree INT);";
             try {
                 runDDL(sql);
-            }   
+            }
             catch (SQLException se) {
                     throw se;
             }
@@ -1887,12 +1888,12 @@ public class SOCDBHelper
 
         SOCBoard board = pl.game.getBoard();
         StringBuilder sql = new StringBuilder();
-        
+
         sql.append("INSERT into firstThreePlacements VALUES(");
         sql.append("\'" + pl.game.getName() + "\',");
         sql.append("\'" + pl.getName() + "\',");
         Vector<Integer> hexes = board.getAdjacentHexesToNode(pl.firstSettlementCoord);
-        sql.append(pl.firstSettlementCoord +","); 
+        sql.append(pl.firstSettlementCoord +",");
 
                 for (int i=0; i < 3 ;i++) {
                 	if(i < hexes.size()) {
@@ -1905,10 +1906,10 @@ public class SOCDBHelper
                 		sql.append(",");
                 	}
                 }
-                
+
                	hexes = board.getAdjacentHexesToNode(pl.secondSettlementCoord);
-                sql.append(pl.secondSettlementCoord + ","); 
-                
+                sql.append(pl.secondSettlementCoord + ",");
+
                	for (int i=0; i < 3 ;i++) {
                 	if(i < hexes.size()) {
                 		int hex = hexes.get(i).intValue();
@@ -1920,10 +1921,10 @@ public class SOCDBHelper
                 		sql.append(",");
                 	}
                 }
-               	
+
                	hexes = board.getAdjacentHexesToNode(pl.thirdSettlementCoord);
-                sql.append(pl.thirdSettlementCoord + ","); 
-                
+                sql.append(pl.thirdSettlementCoord + ",");
+
                	for (int i=0; i < 3 ;i++) {
                 	if(i < hexes.size()) {
                 		int hex = hexes.get(i).intValue();
@@ -1940,12 +1941,63 @@ public class SOCDBHelper
             	sql.append(')');
             	System.out.println(sql.toString());
                 runDDL(sql.toString());
-            }   
+            }
             catch (SQLException se) {
             		se.printStackTrace();
                     throw se;
-            }             
+            }
     }
+
+
+    public static void saveState(final SOCPlayer pl, final SOCPlayerState state, final String move) throws SQLException {
+        if (testOne_doesTableExist("stateTransition", true, false) == false) {
+            String sql = "CREATE TABLE stateTransition(" +
+                "game TEXT, player TEXT," +
+                "moveToGetToNewState TEXT, victoryPoints INT," +
+                "relativeLongestRoad INT, relativeLargestArmy INT," +
+                "opponentsRoadsAway INT, relativeClay INT," +
+                "relativeOre INT, relativeSheep INT," +
+                "relativeWheat INT, relativeWood INT," +
+                "portClay TEXT, portOre TEXT, portSheep TEXT," +
+                "portWheat TEXT, portWood TEXT, portMisc TEXT," +
+                "stateEval DOUBLE);";
+            try {
+                runDDL(sql);
+            }
+            catch (SQLException se) {
+                    throw se;
+            }
+        }
+
+        SOCBoard board = pl.game.getBoard();
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("INSERT into stateTransition VALUES(");
+        sql.append("\'" + pl.game.getName() + "\',");
+        sql.append("\'" + pl.getName() + "\',");
+        sql.append("\'" + move + "\',");
+        sql.append("\'" + pl.getTotalVP() + "\',");
+        sql.append("\'" + state.getRelLongestRoad() + "\',");
+        sql.append("\'" + state.getRelKnightsPlayed() + "\',");
+        sql.append("\'" + state.getopponentRoadsAway() + "\',");
+        sql.append("\'" + state.getRelativeResources() + "\',");
+        sql.append("\'" + state.getPorts() + "\',");
+        sql.append("\'" + state.evalFunction() + "\'");
+        sql.append(")");
+
+        try {
+          System.out.println(sql.toString());
+            runDDL(sql.toString());
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+                throw se;
+        }
+    }
+
+
+
+
 
     /**
      * Try and fit names and scores of player 5 and/or player 6
