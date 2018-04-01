@@ -76,6 +76,7 @@ import soc.util.Queue;
 import soc.util.SOCRobotParameters;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,6 +84,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -2309,42 +2311,147 @@ public class SOCRobotBrain extends Thread
     }
     
     private void playerOptions(SOCPlayer player) {
-    	// ToDo: Discuss what to do about Dev cards
-    	SOCGame game = player.game;
+    	Set<Integer> devCardNums = new HashSet<>(Arrays.asList(0,
+    			SOCDevCardConstants.ROADS, SOCDevCardConstants.DISC, SOCDevCardConstants.MONO,
+    			SOCDevCardConstants.KNIGHT));
     	
-    	@SuppressWarnings("unchecked")
-		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
-    	for(Integer settlement : settlements) {
-    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
-    		 game.putTempPiece(temp);
-        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-    		 System.out.println("Possibile Settlement Eval: " + state.evalFunction());
-    		 game.undoPutTempPiece(temp);
-    	 } 	 
+    	for(int devCardNum : devCardNums) {
+    		if (devCardNum == 0) {
+    			playerSimulation(player);
+    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber)) {
+    			@SuppressWarnings("unchecked")
+				HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
+    			for(Integer road : roads) {
+    	    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
+    	   		 	game.putTempPiece(temp);
+    				@SuppressWarnings("unchecked")
+					HashSet<Integer> secondRoads = (HashSet<Integer>) player.getPotentialRoads().clone();
+    				for(Integer secondRoad : secondRoads) {
+        	    		SOCRoad secondTemp = new SOCRoad(player, secondRoad, game.getBoard());
+        	    		game.putTempPiece(secondTemp);
+        	    		playerSimulation(player);
+        	    		game.undoPutTempPiece(secondTemp);
+    				}
+    				game.undoPutTempPiece(temp);
+    			}	
+    		} else if(devCardNum == SOCDevCardConstants.DISC && game.canPlayDiscovery(player.playerNumber)) {
+    			for(int i=0; i<5; i++) {
+    				Boolean origCouldSettlement = game.couldBuildSettlement(player.playerNumber);
+    				Boolean origCouldRoad = game.couldBuildRoad(player.playerNumber);
+    				Boolean origCouldCity = game.couldBuildCity(player.playerNumber);
+    			
+    				player.getResources().add(2, i);
+    				
+    				Boolean newCouldSettlement = game.couldBuildSettlement(player.playerNumber);
+    				Boolean newCouldRoad = game.couldBuildRoad(player.playerNumber);
+    				Boolean newCouldCity = game.couldBuildCity(player.playerNumber);
+    				
+    				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
+    						|| (!origCouldCity && newCouldCity))
+    					playerSimulation(player);
+    					
+    				player.getResources().subtract(2, i);
+    			}
+    			
+    			for(int i=0; i<5; i++) {
+    				for(int j=i+1; j<5; j++) {
+	    				Boolean origCouldSettlement = game.couldBuildSettlement(player.playerNumber);
+	    				Boolean origCouldRoad = game.couldBuildRoad(player.playerNumber);
+	    				Boolean origCouldCity = game.couldBuildCity(player.playerNumber);
+	    			
+	    				player.getResources().add(1, i);
+	    				player.getResources().add(1, j);
+	    				
+	    				Boolean newCouldSettlement = game.couldBuildSettlement(player.playerNumber);
+	    				Boolean newCouldRoad = game.couldBuildRoad(player.playerNumber);
+	    				Boolean newCouldCity = game.couldBuildCity(player.playerNumber);
+	    				
+	    				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
+	    						|| (!origCouldCity && newCouldCity))
+	    					playerSimulation(player);
+	    					
+	    				player.getResources().subtract(1, i);
+	    				player.getResources().subtract(1, j);    				
+	    			}
+    			}
+    			
+    		} else if(devCardNum == SOCDevCardConstants.MONO && game.canPlayMonopoly(player.playerNumber)) {
+    			SOCResourceSet temp = new SOCResourceSet(5, 0, 0, 0, 0, 0); //Simplifying with 5 cards received
+    			player.getResources().add(temp);
+    			playerSimulation(player);
+    			player.getResources().subtract(temp);
+    			
+    			temp = new SOCResourceSet(0, 5, 0, 0, 0, 0);
+    			player.getResources().add(temp);
+    			playerSimulation(player);
+    			player.getResources().subtract(temp);
+    			
+    			temp = new SOCResourceSet(0, 0, 5, 0, 0, 0);
+    			player.getResources().add(temp);
+    			playerSimulation(player);
+    			player.getResources().subtract(temp);
+    			
+    			temp = new SOCResourceSet(0, 0, 0, 5, 0, 0);
+    			player.getResources().add(temp);
+    			playerSimulation(player);
+    			player.getResources().subtract(temp);
+    			
+    			temp = new SOCResourceSet(0, 0, 0, 0, 5, 0);
+    			player.getResources().add(temp);
+    			playerSimulation(player);
+    			player.getResources().subtract(temp);
+    		} else if(devCardNum == SOCDevCardConstants.KNIGHT && game.canPlayKnight(player.playerNumber)) {
+    			int origKnights = player.getNumKnights();
+    			player.incrementNumKnights();
+    			playerSimulation(player);
+    			player.setNumKnights(origKnights);
+    		}
+    	}
+    }
+    
+    private void playerSimulation(SOCPlayer player) {
+     SOCGame game = player.game;
     	
-    	@SuppressWarnings("unchecked")
-		HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialSettlements().clone();
-    	for(Integer road : roads) {
-    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
-   		 	game.putTempPiece(temp);
-   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-   		 	System.out.println("Possibile Road1 Eval: " + state.evalFunction());
-   		 	game.undoPutTempPiece(temp);
-   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   	 System.out.println("No Move Possibile Eval: " + state.evalFunction());
+    	
+    	if(game.couldBuildSettlement(player.playerNumber)) {
+        	@SuppressWarnings("unchecked")
+			HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+	    	for(Integer settlement : settlements) {
+	    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
+	    		 game.putTempPiece(temp);
+	        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	    		 System.out.println("Possibile Settlement Eval: " + state.evalFunction());
+	    		 game.undoPutTempPiece(temp);
+	    	 } 	 
     	}
     	
-    	@SuppressWarnings("unchecked")
-		HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
-    	for(Integer city : cities) {
-    		SOCCity temp = new SOCCity(player, city, game.getBoard());
-   		 	game.putTempPiece(temp);
-   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-   		 	System.out.println("Possibile City1 Eval: " + state.evalFunction());
-   		 	game.undoPutTempPiece(temp);
-   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+    	if(game.couldBuildRoad(player.playerNumber)) {
+	    	@SuppressWarnings("unchecked")
+			HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
+	    	for(Integer road : roads) {
+	    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
+	   		 	game.putTempPiece(temp);
+	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	   		 	System.out.println("Possibile Road Eval: " + state.evalFunction());
+	   		 	game.undoPutTempPiece(temp);
+	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	    	}
     	}
     	
-    	
+    	if(game.couldBuildCity(player.playerNumber)) {
+	    	@SuppressWarnings("unchecked")
+			HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
+	    	for(Integer city : cities) {
+	    		SOCCity temp = new SOCCity(player, city, game.getBoard());
+	   		 	game.putTempPiece(temp);
+	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	   		 	System.out.println("Possibile City Eval: " + state.evalFunction());
+	   		 	game.undoPutTempPiece(temp);
+	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	    	}
+    	}   	
     }
 
     /**
