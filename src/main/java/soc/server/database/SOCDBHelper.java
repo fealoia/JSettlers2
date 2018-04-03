@@ -1853,7 +1853,6 @@ public class SOCDBHelper
             try {
             	sql.delete(sql.length()-1,sql.length());
             	sql.append(')');
-            	System.out.println(sql.toString());
                 runDDL(sql.toString());
             }
             catch (SQLException se) {
@@ -1939,7 +1938,6 @@ public class SOCDBHelper
             try {
             	sql.delete(sql.length()-1,sql.length());
             	sql.append(')');
-            	System.out.println(sql.toString());
                 runDDL(sql.toString());
             }
             catch (SQLException se) {
@@ -1986,7 +1984,6 @@ public class SOCDBHelper
         sql.append(")");
 
         try {
-          System.out.println(sql.toString());
             runDDL(sql.toString());
         }
         catch (SQLException se) {

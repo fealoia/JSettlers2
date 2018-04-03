@@ -93,7 +93,7 @@ class SOCLocalRobotClient implements Runnable
         if (strSocketName != null)
             rcli = new SOCRobotClient(strSocketName, rname, "pw", cookie);
         else
-            rcli = new New3PClient("localhost", port, rname, "pw", cookie);
+            rcli = new SOCRobotClient("localhost", port, rname, "pw", cookie);
         Thread rth = new Thread(new SOCLocalRobotClient(rcli));
         rth.setDaemon(true);
         rth.start();  // run() will add to robotClients
@@ -106,5 +106,27 @@ class SOCLocalRobotClient implements Runnable
         }
         catch (InterruptedException ie) {}
     }
+    
+    public static void createAndStartNewRobotThread
+    (final String rname, final String strSocketName, final int port, final String cookie)
+    throws ClassNotFoundException, LinkageError
+{
+    SOCRobotClient rcli;
+    if (strSocketName != null)
+        rcli = new SOCRobotClient(strSocketName, rname, "pw", cookie);
+    else
+        rcli = new New3PClient("localhost", port, rname, "pw", cookie);
+    Thread rth = new Thread(new SOCLocalRobotClient(rcli));
+    rth.setDaemon(true);
+    rth.start();  // run() will add to robotClients
+
+    Thread.yield();
+    try
+    {
+        Thread.sleep(75);  // Let that robot go for a bit.
+            // robot runner thread will call its init()
+    }
+    catch (InterruptedException ie) {}
+}
 
 }  // class SOCPlayerLocalRobotRunner

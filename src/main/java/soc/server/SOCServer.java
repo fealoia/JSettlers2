@@ -2476,7 +2476,11 @@ public class SOCServer extends Server
             for (int i = 0; i < numSmart+numFast; ++i)
             {
                 String rname = "robot " + (i+1);
-                SOCLocalRobotClient.createAndStartRobotClientThread(rname, strSocketName, port, robotCookie);
+                if(i%2 == 0) {
+                        SOCLocalRobotClient.createAndStartRobotClientThread(rname, strSocketName, port, robotCookie);
+                } else {
+                        SOCLocalRobotClient.createAndStartNewRobotThread(rname, strSocketName, port, robotCookie);
+                }
                     // includes yield() and sleep(75 ms) this thread.
             }
         }
