@@ -58,8 +58,8 @@ public class New3PBrain extends SOCRobotBrain
     protected final void planBuilding()
     {
     	playerOptions(ourPlayerData);
-    	
-        if (! buildingPlan.empty())
+
+    	if (! buildingPlan.empty())
         {
             lastTarget = buildingPlan.peek();
             if(!(lastTarget instanceof SOCPossibleCard))
@@ -137,6 +137,9 @@ public class New3PBrain extends SOCRobotBrain
         	  	case SOCDevCardConstants.KNIGHT:
         	  		buildingPlan.pop();
         	  		playKnightCard();
+        	  	case SOCDevCardConstants.UNKNOWN:
+                    client.buyDevCard(game);
+                    waitingForDevCard = true;
         	  }
           }
         }
@@ -153,6 +156,7 @@ public class New3PBrain extends SOCRobotBrain
     	for(int devCardNum : devCardNums) {
     		if (devCardNum == 0) {
     			playerSimulation(player);
+    		//	System.out.println("Final Eval:" + currentChoiceEval + " for Player: " + ourPlayerNumber);
     		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber)) {				
     			Double prevEval = currentChoiceEval;
     			SOCPossibleRoad road1 = null;
@@ -281,11 +285,12 @@ public class New3PBrain extends SOCRobotBrain
     	if(game.couldBuildSettlement(player.playerNumber)) {
         	@SuppressWarnings("unchecked")
 			HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
-	    	for(Integer settlement : settlements) {
+        	for(Integer settlement : settlements) {
 	    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
 	    		 game.putTempPiece(temp);
 	        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
 	        	 Double eval = state.evalFunction();
+	       // 	 System.out.println("Settlement Eval: " + eval);
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleSettlement posTemp = new SOCPossibleSettlement(player, settlement, null);
@@ -305,6 +310,7 @@ public class New3PBrain extends SOCRobotBrain
 	   		 	game.putTempPiece(temp);
 	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
 		   		 Double eval = state.evalFunction();
+	        //	 System.out.println("Road Eval: " + eval);
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleRoad posTemp = new SOCPossibleRoad(player, road, null);
@@ -324,6 +330,7 @@ public class New3PBrain extends SOCRobotBrain
 	   		 	game.putTempPiece(temp);
 	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
 		   		 Double eval = state.evalFunction();
+	        //	 System.out.println("City Eval: " + eval);
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleCity posTemp = new SOCPossibleCity(player, city);
@@ -333,6 +340,19 @@ public class New3PBrain extends SOCRobotBrain
 	        	 }
 	   		 	game.undoPutTempPiece(temp);
 	    	}
-    	}   	
+    	}
+    	
+    	if(game.couldBuyDevCard(player.playerNumber)) {
+    		player.getInventory().addDevCard(1, 1, SOCDevCardConstants.UNKNOWN);
+   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   		 	Double eval = state.evalFunction();
+   		 	if(eval > currentChoiceEval) {
+   		 		currentChoiceEval = eval;
+   		 		SOCPossibleCard posTemp = new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.UNKNOWN);
+	        	buildingPlan.clear();
+	        	buildingPlan.push(posTemp);
+   		 	}
+   		 	player.getInventory().removeDevCard(1, SOCDevCardConstants.UNKNOWN);
+    	}
     }
 }
