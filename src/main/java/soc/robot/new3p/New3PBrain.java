@@ -81,44 +81,49 @@ public class New3PBrain extends SOCRobotBrain
 
           if(!(targetPiece instanceof SOCPossibleCard)) {
         	  negotiator.setTargetPiece(ourPlayerNumber, targetPiece);
-        	  
-        	  if (gameStatePLAY1 && (! doneTrading) && (! ourPlayerData.getResources().contains(targetResources)))
-              {
-                  waitingForTradeResponse = false;
-
-                  if (robotParameters.getTradeFlag() == 1)
-                  {
-                      makeOffer(targetPiece);
-                      // makeOffer will set waitingForTradeResponse or doneTrading.
-                  }
-              }
-
-              if (gameStatePLAY1 && ! waitingForTradeResponse)
-              {
-                  /**
-                   * trade with the bank/ports
-                   */
-                  if (tradeToTarget2(targetResources))
-                  {
-                      counter = 0;
-                      waitingForTradeMsg = true;
-                      pause(1500);
-                  }
-              }   
-              
-              if ((! (waitingForTradeMsg || waitingForTradeResponse))
-                      && ourPlayerData.getResources().contains(targetResources))
-                  {
-            	  	System.out.println("BUILDING: " + targetPiece);
-                  	buildRequestPlannedPiece();
-                  }
+        	  if(!expectWAITING_FOR_DISCOVERY && !expectWAITING_FOR_MONOPOLY) {
+	        	  if (gameStatePLAY1 && (! doneTrading) && (! ourPlayerData.getResources().contains(targetResources)))
+	              {
+	                  waitingForTradeResponse = false;
+	
+	                  if (robotParameters.getTradeFlag() == 1)
+	                  {
+	                      makeOffer(targetPiece);
+	                      // makeOffer will set waitingForTradeResponse or doneTrading.
+	                  }
+	              }
+	
+	              if (gameStatePLAY1 && ! waitingForTradeResponse)
+	              {
+	                  /**
+	                   * trade with the bank/ports
+	                   */
+	                  if (tradeToTarget2(targetResources))
+	                  {
+	                      counter = 0;
+	                      waitingForTradeMsg = true;
+	                      pause(1500);
+	                  }
+	              }   
+	              
+	              if ((! (waitingForTradeMsg || waitingForTradeResponse))
+	                      && ourPlayerData.getResources().contains(targetResources))
+	                  {
+	            	  	System.out.println("BUILDING: " + targetPiece);
+	                  	buildRequestPlannedPiece();
+	                  }
+        	  }
           } else {
         	  switch(((SOCPossibleCard) targetPiece).type) {
         	  	case SOCDevCardConstants.ROADS:
         	  		System.out.println("PLAY ROAD BUILDER");
-        	  		if(!buildingPlan.empty())
-        	  			buildingPlan.pop();
+        	  		 waitingForGameState = true;
+                     counter = 0;
+                     expectPLACING_FREE_ROAD1 = true;
+        	  		buildingPlan.pop();
+        	  		whatWeWantToBuild = new SOCRoad(ourPlayerData, buildingPlan.pop().getCoordinates(), null);
         	  		client.playDevCard(game, SOCDevCardConstants.ROADS);
+        	  		break;
         	  	case SOCDevCardConstants.DISC:
         	  	   System.out.println("PLAY DISCOVERY");
         	  	  expectWAITING_FOR_DISCOVERY = true;
@@ -128,6 +133,7 @@ public class New3PBrain extends SOCRobotBrain
       	  			buildingPlan.pop();
                   client.playDevCard(game, SOCDevCardConstants.DISC);
                   pause(1500);
+                  break;
         	  	case SOCDevCardConstants.MONO:
         	  		System.out.println("PLAY MONOPOLY");
         	  		expectWAITING_FOR_MONOPOLY = true;
@@ -137,12 +143,13 @@ public class New3PBrain extends SOCRobotBrain
         	  			buildingPlan.pop();
                     client.playDevCard(game, SOCDevCardConstants.MONO);
                     pause(1500);
+                    break;
         	  	case SOCDevCardConstants.KNIGHT:
         	  		System.out.println("PLAY KNIGHT");
         	  		if(!buildingPlan.empty())
         	  			buildingPlan.pop();
         	  		playKnightCard();
-        	  		//TODO: Known error when attempting to place robber
+        	  		break;
         	  	case SOCDevCardConstants.UNKNOWN:
         	  		if(!buildingPlan.empty())
         	  			buildingPlan.pop();
@@ -165,7 +172,7 @@ public class New3PBrain extends SOCRobotBrain
     		if (devCardNum == 0) {
     			playerSimulation(player);
     		//	System.out.println("Final Eval:" + currentChoiceEval + " for Player: " + ourPlayerNumber);
-    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber)) {				
+    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {				
     			Double prevEval = currentChoiceEval;
     			SOCPossibleRoad road1 = null;
     			SOCPossibleRoad road2 = null;
@@ -198,7 +205,7 @@ public class New3PBrain extends SOCRobotBrain
     				 buildingPlan.push(road1);
 	        		 buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.ROADS));
     			}
-    		} else if(devCardNum == SOCDevCardConstants.DISC && game.canPlayDiscovery(player.playerNumber)) {
+    		} else if(devCardNum == SOCDevCardConstants.DISC && game.canPlayDiscovery(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			Double prevEval = currentChoiceEval;
     			
 				Boolean origCouldSettlement = game.couldBuildSettlement(player.playerNumber);
@@ -241,7 +248,7 @@ public class New3PBrain extends SOCRobotBrain
       				 buildingPlan.clear();
       				 buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.DISC));
        			}
-    		} else if(devCardNum == SOCDevCardConstants.MONO && game.canPlayMonopoly(player.playerNumber)) {
+    		} else if(devCardNum == SOCDevCardConstants.MONO && game.canPlayMonopoly(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			SOCResourceSet temp = new SOCResourceSet(5, 0, 0, 0, 0, 0); //Simplifying with 5 cards received
     			Double prevEval = currentChoiceEval;
     			
@@ -273,7 +280,7 @@ public class New3PBrain extends SOCRobotBrain
    				 buildingPlan.clear();
 	        	 buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.MONO));
     			}	
-    		} else if(devCardNum == SOCDevCardConstants.KNIGHT && game.canPlayKnight(player.playerNumber)) {
+    		} else if(devCardNum == SOCDevCardConstants.KNIGHT && game.canPlayKnight(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			int origKnights = player.getNumKnights();
     			player.incrementNumKnights();
     			Double prevEval = currentChoiceEval;
