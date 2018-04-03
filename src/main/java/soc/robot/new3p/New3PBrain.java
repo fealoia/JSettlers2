@@ -116,14 +116,16 @@ public class New3PBrain extends SOCRobotBrain
         	  switch(((SOCPossibleCard) targetPiece).type) {
         	  	case SOCDevCardConstants.ROADS:
         	  		System.out.println("PLAY ROAD BUILDER");
-        	  		buildingPlan.pop();
+        	  		if(!buildingPlan.empty())
+        	  			buildingPlan.pop();
         	  		client.playDevCard(game, SOCDevCardConstants.ROADS);
         	  	case SOCDevCardConstants.DISC:
         	  	   System.out.println("PLAY DISCOVERY");
         	  	  expectWAITING_FOR_DISCOVERY = true;
                   waitingForGameState = true;
                   counter = 0;
-      	  		  buildingPlan.pop();
+      	  		if(!buildingPlan.empty())
+      	  			buildingPlan.pop();
                   client.playDevCard(game, SOCDevCardConstants.DISC);
                   pause(1500);
         	  	case SOCDevCardConstants.MONO:
@@ -131,13 +133,19 @@ public class New3PBrain extends SOCRobotBrain
         	  		expectWAITING_FOR_MONOPOLY = true;
                     waitingForGameState = true;
                     counter = 0;
-        	  		buildingPlan.pop();
+        	  		if(!buildingPlan.empty())
+        	  			buildingPlan.pop();
                     client.playDevCard(game, SOCDevCardConstants.MONO);
                     pause(1500);
         	  	case SOCDevCardConstants.KNIGHT:
-        	  		buildingPlan.pop();
+        	  		System.out.println("PLAY KNIGHT");
+        	  		if(!buildingPlan.empty())
+        	  			buildingPlan.pop();
         	  		playKnightCard();
+        	  		//TODO: Known error when attempting to place robber
         	  	case SOCDevCardConstants.UNKNOWN:
+        	  		if(!buildingPlan.empty())
+        	  			buildingPlan.pop();
                     client.buyDevCard(game);
                     waitingForDevCard = true;
         	  }
