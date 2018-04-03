@@ -38,6 +38,9 @@ public class SOCPossibleCard extends SOCPossiblePiece
      * @param pl   the owner
      * @param et  the eta
      */
+
+    public int type;
+
     public SOCPossibleCard(SOCPlayer pl, int et)
     {
         super(SOCPossiblePiece.CARD, pl, 0);  // no coordinate
@@ -45,7 +48,19 @@ public class SOCPossibleCard extends SOCPossiblePiece
         eta = et;
         threatUpdatedFlag = false;
         hasBeenExpanded = false;
+        type = -1;
     }
+    
+    public SOCPossibleCard(SOCPlayer pl, int et, int type)
+    {
+        super(SOCPossiblePiece.CARD, pl, 0);  // no coordinate
+
+        eta = et;
+        threatUpdatedFlag = false;
+        hasBeenExpanded = false;
+        this.type = type;
+    }
+
 
     /**
      * copy constructor

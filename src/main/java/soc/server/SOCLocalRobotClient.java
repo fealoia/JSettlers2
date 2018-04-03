@@ -24,6 +24,7 @@ package soc.server;
 import java.util.Hashtable;
 
 import soc.robot.SOCRobotClient;
+import soc.robot.new3p.New3PClient;
 
 /**
  * Each local robot in the {@link SOCServer} gets its own client thread.
@@ -92,7 +93,7 @@ class SOCLocalRobotClient implements Runnable
         if (strSocketName != null)
             rcli = new SOCRobotClient(strSocketName, rname, "pw", cookie);
         else
-            rcli = new SOCRobotClient("localhost", port, rname, "pw", cookie);
+            rcli = new New3PClient("localhost", port, rname, "pw", cookie);
         Thread rth = new Thread(new SOCLocalRobotClient(rcli));
         rth.setDaemon(true);
         rth.start();  // run() will add to robotClients

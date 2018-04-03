@@ -7252,8 +7252,8 @@ public class SOCServer extends Server
                 }
 
                 GameHandler hand = gameList.getGameTypeHandler(ga.getName());
-                if (hand != null)
-                    hand.endTurnIfInactive(ga, currentTimeMillis);
+                //if (hand != null)
+                //    hand.endTurnIfInactive(ga, currentTimeMillis);
 
                 // TODO consider keeping stats on forced end turns (return false or true from endTurnIfInactive, etc)
             }
