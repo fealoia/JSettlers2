@@ -68,6 +68,7 @@ import soc.message.SOCSitDown;  // for javadoc
 import soc.message.SOCStartGame;
 import soc.message.SOCTimingPing;  // for javadoc
 import soc.message.SOCTurn;
+import soc.robot.new3p.New3PBrain;
 import soc.server.database.SOCDBHelper;
 import soc.state.SOCPlayerState;
 import soc.util.CappedQueue;
@@ -140,7 +141,7 @@ public class SOCRobotBrain extends Thread
      * Default 0.25 (25% of normal pause time: 4x speed-up).
      * @since 2.0.00
      */
-    public static float BOTS_ONLY_FAST_PAUSE_FACTOR = .0f;
+    public static float BOTS_ONLY_FAST_PAUSE_FACTOR = 1f;
 
     /**
      * If, during a turn, we make this many illegal build
@@ -596,7 +597,7 @@ public class SOCRobotBrain extends Thread
      * Otherwise -1.
      * @since 1.1.17
      */
-    private int rejectedPlayDevCardType;
+    protected int rejectedPlayDevCardType;
 
     /**
      * If not {@code null}, the server rejected our play of this {@link SOCInventoryItem}
@@ -1122,7 +1123,6 @@ public class SOCRobotBrain extends Thread
                 try
                 {
                     final SOCMessage mes = gameEventQ.get();  // Sleeps until message received
-
                     final int mesType;
                     if (mes != null)
                     {
@@ -1628,6 +1628,7 @@ public class SOCRobotBrain extends Thread
                                 && (failedBuildingAttempts < MAX_DENIED_BUILDING_PER_TURN))
                             {
                                 planBuilding();
+                                //pause(2000);
 
                                     /*
                                      * planBuilding takes these actions, sets buildingPlan and other fields
@@ -2250,6 +2251,8 @@ public class SOCRobotBrain extends Thread
      */
     private void playKnightCardIfShould()
     {
+    	if(this instanceof New3PBrain) return;
+    	
         final boolean canGrowArmy;
 
         if (game.isGameOptionSet(SOCGameOption.K_SC_PIRI))
