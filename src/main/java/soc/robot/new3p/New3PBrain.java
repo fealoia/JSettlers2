@@ -45,15 +45,15 @@ public class New3PBrain extends SOCRobotBrain
 {
 	Double currentChoiceEval;
 	SOCPossiblePiece currentChoice;
-	
+
     public New3PBrain(SOCRobotClient rc, SOCRobotParameters params, SOCGame ga, CappedQueue<SOCMessage> mq)
     {
         super(rc, params, ga, mq);
-        
+
     	this.currentChoiceEval = Double.NEGATIVE_INFINITY;
     	this.currentChoice = null;
     }
-    
+
     @Override
     protected final void planBuilding()
     {
@@ -66,14 +66,14 @@ public class New3PBrain extends SOCRobotBrain
             	negotiator.setTargetPiece(ourPlayerNumber, lastTarget);
         }
     }
-    
+
     @Override
     protected void buildOrGetResourceByTradeOrCard()
             throws IllegalStateException
         {
     	  if (buildingPlan.isEmpty())
               throw new IllegalStateException("buildingPlan empty when called");
-    	  
+
     	  final boolean gameStatePLAY1 = (game.getGameState() == SOCGame.PLAY1);
 
           SOCPossiblePiece targetPiece = buildingPlan.peek();
@@ -85,14 +85,14 @@ public class New3PBrain extends SOCRobotBrain
 	        	  if (gameStatePLAY1 && (! doneTrading) && (! ourPlayerData.getResources().contains(targetResources)))
 	              {
 	                  waitingForTradeResponse = false;
-	
+
 	                  if (robotParameters.getTradeFlag() == 1)
 	                  {
 	                      makeOffer(targetPiece);
 	                      // makeOffer will set waitingForTradeResponse or doneTrading.
 	                  }
 	              }
-	
+
 	              if (gameStatePLAY1 && ! waitingForTradeResponse)
 	              {
 	                  /**
@@ -104,8 +104,8 @@ public class New3PBrain extends SOCRobotBrain
 	                      waitingForTradeMsg = true;
 	                      pause(1500);
 	                  }
-	              }   
-	              
+	              }
+
 	              if ((! (waitingForTradeMsg || waitingForTradeResponse))
 	                      && ourPlayerData.getResources().contains(targetResources))
 	                  {
@@ -158,25 +158,25 @@ public class New3PBrain extends SOCRobotBrain
         	  }
           }
         }
-    
+
     private void playerOptions(SOCPlayer player) {
-    	Set<Integer> devCardNums = new HashSet<>(Arrays.asList(0,
+    	Set<Integer> devCardNums = new HashSet<Integer>(Arrays.asList(0,
     			SOCDevCardConstants.ROADS, SOCDevCardConstants.DISC, SOCDevCardConstants.MONO,
     			SOCDevCardConstants.KNIGHT));
-    	
+
       	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
     	currentChoiceEval = state.evalFunction();
     	currentChoice = null;
-    	
+
     	for(int devCardNum : devCardNums) {
     		if (devCardNum == 0) {
     			playerSimulation(player);
     		//	System.out.println("Final Eval:" + currentChoiceEval + " for Player: " + ourPlayerNumber);
-    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {				
+    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			Double prevEval = currentChoiceEval;
     			SOCPossibleRoad road1 = null;
     			SOCPossibleRoad road2 = null;
-    			
+
     			@SuppressWarnings("unchecked")
 				HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
     			for(Integer road : roads) {
@@ -189,7 +189,7 @@ public class New3PBrain extends SOCRobotBrain
         	    		game.putTempPiece(secondTemp);
         	    		playerSimulation(player);
         	    		game.undoPutTempPiece(secondTemp);
-        	    		
+
         	    		if(prevEval != currentChoiceEval) {
         	    			prevEval = currentChoiceEval;
         	    			road1 = new SOCPossibleRoad(ourPlayerData, temp.getCoordinates(), null);
@@ -198,7 +198,7 @@ public class New3PBrain extends SOCRobotBrain
     				}
     				game.undoPutTempPiece(temp);
     			}
-    			
+
     			if(road1 != null) {
     				 buildingPlan.clear();
     				 buildingPlan.push(road2);
@@ -207,43 +207,43 @@ public class New3PBrain extends SOCRobotBrain
     			}
     		} else if(devCardNum == SOCDevCardConstants.DISC && game.canPlayDiscovery(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			Double prevEval = currentChoiceEval;
-    			
+
 				Boolean origCouldSettlement = game.couldBuildSettlement(player.playerNumber);
 				Boolean origCouldRoad = game.couldBuildRoad(player.playerNumber);
 				Boolean origCouldCity = game.couldBuildCity(player.playerNumber);
-    			
+
     			for(int i=0; i<5; i++) {
     				player.getResources().add(2, i);
-    				
+
     				Boolean newCouldSettlement = game.couldBuildSettlement(player.playerNumber);
     				Boolean newCouldRoad = game.couldBuildRoad(player.playerNumber);
     				Boolean newCouldCity = game.couldBuildCity(player.playerNumber);
-    				
+
     				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
     						|| (!origCouldCity && newCouldCity))
     					playerSimulation(player);
-    					
+
     				player.getResources().subtract(2, i);
     			}
-    			
+
     			for(int i=0; i<5; i++) {
     				for(int j=i+1; j<5; j++) {
 	    				player.getResources().add(1, i);
 	    				player.getResources().add(1, j);
-	    				
+
 	    				Boolean newCouldSettlement = game.couldBuildSettlement(player.playerNumber);
 	    				Boolean newCouldRoad = game.couldBuildRoad(player.playerNumber);
 	    				Boolean newCouldCity = game.couldBuildCity(player.playerNumber);
-	    				
+
 	    				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
 	    						|| (!origCouldCity && newCouldCity))
 	    					playerSimulation(player);
-	    					
+
 	    				player.getResources().subtract(1, i);
-	    				player.getResources().subtract(1, j);    				
+	    				player.getResources().subtract(1, j);
 	    			}
     			}
-    			
+
     			if(prevEval != currentChoiceEval) {
       				 buildingPlan.clear();
       				 buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.DISC));
@@ -251,35 +251,35 @@ public class New3PBrain extends SOCRobotBrain
     		} else if(devCardNum == SOCDevCardConstants.MONO && game.canPlayMonopoly(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			SOCResourceSet temp = new SOCResourceSet(5, 0, 0, 0, 0, 0); //Simplifying with 5 cards received
     			Double prevEval = currentChoiceEval;
-    			
+
     			player.getResources().add(temp);
     			playerSimulation(player);
     			player.getResources().subtract(temp);
-    			
+
     			temp = new SOCResourceSet(0, 5, 0, 0, 0, 0);
     			player.getResources().add(temp);
     			playerSimulation(player);
     			player.getResources().subtract(temp);
-    			
+
     			temp = new SOCResourceSet(0, 0, 5, 0, 0, 0);
     			player.getResources().add(temp);
     			playerSimulation(player);
     			player.getResources().subtract(temp);
-    			
+
     			temp = new SOCResourceSet(0, 0, 0, 5, 0, 0);
     			player.getResources().add(temp);
     			playerSimulation(player);
     			player.getResources().subtract(temp);
-    			
+
     			temp = new SOCResourceSet(0, 0, 0, 0, 5, 0);
     			player.getResources().add(temp);
     			playerSimulation(player);
     			player.getResources().subtract(temp);
-    			
+
     			if(prevEval != currentChoiceEval) {
    				 buildingPlan.clear();
 	        	 buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.MONO));
-    			}	
+    			}
     		} else if(devCardNum == SOCDevCardConstants.KNIGHT && game.canPlayKnight(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
     			int origKnights = player.getNumKnights();
     			player.incrementNumKnights();
@@ -293,10 +293,10 @@ public class New3PBrain extends SOCRobotBrain
     		}
     	}
     }
-    
+
     private void playerSimulation(SOCPlayer player) {
     	SOCGame game = player.game;
-    	
+
     	if(game.couldBuildSettlement(player.playerNumber)) {
         	@SuppressWarnings("unchecked")
 			HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
@@ -314,9 +314,9 @@ public class New3PBrain extends SOCRobotBrain
 	        		 buildingPlan.push(posTemp);
 	        	 }
 	    		 game.undoPutTempPiece(temp);
-	    	 } 	 
+	    	 }
     	}
-    	
+
     	if(game.couldBuildRoad(player.playerNumber)) {
 	    	@SuppressWarnings("unchecked")
 			HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
@@ -336,7 +336,7 @@ public class New3PBrain extends SOCRobotBrain
 	   		 	game.undoPutTempPiece(temp);
 	    	}
     	}
-    	
+
     	if(game.couldBuildCity(player.playerNumber)) {
 	    	@SuppressWarnings("unchecked")
 			HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
@@ -356,7 +356,7 @@ public class New3PBrain extends SOCRobotBrain
 	   		 	game.undoPutTempPiece(temp);
 	    	}
     	}
-    	
+
     	if(game.couldBuyDevCard(player.playerNumber)) {
     		player.getInventory().addDevCard(1, 1, SOCDevCardConstants.UNKNOWN);
    		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());

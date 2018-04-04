@@ -2252,7 +2252,7 @@ public class SOCRobotBrain extends Thread
     private void playKnightCardIfShould()
     {
     	if(this instanceof New3PBrain) return;
-    	
+
         final boolean canGrowArmy;
 
         if (game.isGameOptionSet(SOCGameOption.K_SC_PIRI))

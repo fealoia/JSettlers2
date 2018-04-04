@@ -6,6 +6,8 @@ import soc.game.SOCBoard;
 import soc.game.SOCPlayer;
 import soc.game.SOCPlayerNumbers;
 import soc.game.SOCRoad;
+import soc.robot.SOCRobotBrain;
+import soc.robot.new3p.New3PBrain;
 import soc.robot.SOCBuildingSpeedEstimate;
 import soc.robot.SOCPossibleSettlement;
 import soc.game.SOCDevCardConstants;
@@ -14,6 +16,8 @@ import soc.game.SOCInventory;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collection;
+import soc.robot.SOCPlayerTracker;
 
 
 public class SOCPlayerState {
@@ -39,6 +43,7 @@ public class SOCPlayerState {
 	protected double knightEval;
 	protected double sum;
 	protected double resourceEval;
+	protected double currentSettlementValue = 0;
 	protected boolean portClay;
 	protected boolean portOre;
 	protected boolean portSheep;
@@ -56,6 +61,7 @@ public class SOCPlayerState {
 	private double boardWood;
 	private SOCResourceSet resources;
 	private SOCInventory newInventory;
+
 
 
 	public SOCPlayerState(SOCBoard board) {
@@ -88,11 +94,6 @@ public class SOCPlayerState {
 		this(state.board);
 	}
 
-	public static SOCPlayerState simulateState(SOCPlayerState currentState, SOCPlayer player) {
-		SOCPlayerState simulation = new SOCPlayerState(currentState);
-		simulation.updateState(player, null);
-		return simulation;
-	}
 
 	public void updateState(SOCPlayer player, SOCPossibleSettlement favoriteSettlement) {
 		SOCPlayer[] players = player.game.getPlayers();
@@ -174,9 +175,53 @@ public class SOCPlayerState {
 		portWheat = player.getPortFlag(SOCBoard.WHEAT_PORT);
 		portWood = player.getPortFlag(SOCBoard.WOOD_PORT);
 		portMisc = player.getPortFlag(SOCBoard.MISC_PORT);
+
+
+//getting a value of possible settlemetn positions
+		Vector<SOCRoad> allroads = player.getRoads();
+		for(SOCRoad road : allroads){
+			int adjNodes[] = road.getAdjacentNodes();
+			for (int node : adjNodes){
+				if (player.canPlaceSettlement(node)){
+					double newSettlementValue = calculateSettlementValue(node, player);
+					if (newSettlementValue > currentSettlementValue){
+						currentSettlementValue = newSettlementValue;
+					}
+				}
+			}
+		}
+	}
+
+	public double calculateSettlementValue(int node, SOCPlayer player){
+		Vector<Integer> hexes = board.getAdjacentHexesToNode(node);
+		int y = 0;
+		for (Integer hex : hexes){
+			int x;
+			int hexType = board.getHexTypeFromCoord(hex);
+			int hexNumber = board.getNumberOnHexFromCoord(hex);
+			if (hexNumber == 8 || hexNumber == 6){
+				x = 5;
+			}
+			else if (hexNumber == 9 || hexNumber == 5){
+				x = 4;
+			}
+			else if (hexNumber == 10 || hexNumber == 4){
+				x = 3;
+			}
+			else if (hexNumber == 11 || hexNumber == 3){
+				x = 2;
+			}
+			else {
+				x = 1;
+			}
+			y = y + x;
+		}
+
+		return y/2.5;
 	}
 
 	public double evalFunction(){
+
 
 		longestRoadEval = Math.cbrt(200*relativeLongestRoadLength);
 		knightEval = Math.cbrt(400*relativeKnightsPlayed);
@@ -213,9 +258,8 @@ public class SOCPlayerState {
 
 		int devCardTotal = newInventory.getTotal();
 		double resourceTotalEval = resourceTotal * .5;
-		System.out.println("THIS IS IT");
-		System.out.println(resourceTotalEval);
-		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval + devCardTotal + resourceTotalEval;
+
+		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval + devCardTotal + resourceTotalEval + currentSettlementValue;
 		return sum;
 	}
 
