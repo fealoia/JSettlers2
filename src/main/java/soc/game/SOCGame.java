@@ -6859,6 +6859,14 @@ public class SOCGame implements Serializable, Cloneable
         return ((resources.getAmount(SOCResourceConstants.SHEEP) >= 1) && (resources.getAmount(SOCResourceConstants.ORE) >= 1) && (resources.getAmount(SOCResourceConstants.WHEAT) >= 1) && (numDevCards > 0));
     }
 
+    public boolean canBuyDevCard(final SOCPlayer player)
+    {
+      SOCResourceSet resources = player.getResources();
+
+      return ((resources.getAmount(SOCResourceConstants.SHEEP) >= 1) && (resources.getAmount(SOCResourceConstants.ORE) >= 1) && (resources.getAmount(SOCResourceConstants.WHEAT) >= 1) && (numDevCards > 0));
+  }
+
+
     /**
      * @return true if the player has the resources, pieces, and
      *         room to build a ship.  Always false if not {@link #hasSeaBoard}

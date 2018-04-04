@@ -8,6 +8,13 @@ import soc.game.SOCPlayerNumbers;
 import soc.game.SOCRoad;
 import soc.robot.SOCBuildingSpeedEstimate;
 import soc.robot.SOCPossibleSettlement;
+import soc.game.SOCDevCardConstants;
+import soc.game.SOCResourceSet;
+import soc.game.SOCInventory;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 
 public class SOCPlayerState {
 	//State representation variables
@@ -22,6 +29,7 @@ public class SOCPlayerState {
 	protected int woodPort;
 	protected int miscPort;
 	protected int opponentRoadAwayEval;
+	protected double resourceTotal;
 	protected double relativeClay;
 	protected double relativeOre;
 	protected double relativeSheep;
@@ -46,6 +54,9 @@ public class SOCPlayerState {
 	private double boardSheep;
 	private double boardWheat;
 	private double boardWood;
+	private SOCResourceSet resources;
+	private SOCInventory newInventory;
+
 
 	public SOCPlayerState(SOCBoard board) {
 		this.relativeLongestRoadLength = -5;
@@ -87,6 +98,9 @@ public class SOCPlayerState {
 		SOCPlayer[] players = player.game.getPlayers();
 		int oppLR = 0;
 		int oppLA = 0;
+		resources = player.getResources();
+		newInventory = player.getInventory();
+		resourceTotal = player.getResources().getTotal();
 
 		for(int i=0; i<players.length; i++) {
 			if(i == player.playerNumber) continue;
@@ -146,6 +160,8 @@ public class SOCPlayerState {
 		estimate.recalculateEstimates(player.getNumbers());
 		int[] playerResources = estimate.getRollsPerResource();
 
+
+
 		relativeClay = playerResources[1] > 0 ? (1.0 / playerResources[1]) / boardClay : 0;
 		relativeOre = playerResources[2] > 0 ? (1.0 / playerResources[2]) / boardOre : 0;
 		relativeSheep = playerResources[3] > 0 ? (1.0 / playerResources[3]) / boardSheep : 0;
@@ -195,7 +211,11 @@ public class SOCPlayerState {
 													relativeWheat + relativeWheat*(wheatPort));
 		}
 
-		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval;
+		int devCardTotal = newInventory.getTotal();
+		double resourceTotalEval = resourceTotal * .5;
+		System.out.println("THIS IS IT");
+		System.out.println(resourceTotalEval);
+		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval + devCardTotal + resourceTotalEval;
 		return sum;
 	}
 

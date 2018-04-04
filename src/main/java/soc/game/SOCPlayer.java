@@ -708,7 +708,7 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
         scenario_svpFromEachLandArea_bitmask = player.scenario_svpFromEachLandArea_bitmask;
         startingLandArea1 = player.startingLandArea1;
         startingLandArea2 = player.startingLandArea2;
-    
+
         firstSettlementCoord = player.firstSettlementCoord;
         secondSettlementCoord = player.secondSettlementCoord;
         thirdSettlementCoord = player.thirdSettlementCoord;
@@ -3922,7 +3922,7 @@ public class SOCPlayer implements SOCDevCardConstants, Serializable, Cloneable
             pset[i] = it.next().intValue();
         return pset;
     }
-    
+
     public HashSet<Integer> getPotentialRoads()
     {
         return potentialRoads;
