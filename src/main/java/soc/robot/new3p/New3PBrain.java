@@ -341,6 +341,7 @@ public class New3PBrain extends SOCRobotBrain
 	    	@SuppressWarnings("unchecked")
 			HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
 	    	for(Integer city : cities) {
+	    		if(!player.isPotentialCity(city)) continue;
 	    		SOCCity temp = new SOCCity(player, city, game.getBoard());
 	   		 	game.putTempPiece(temp);
 	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
