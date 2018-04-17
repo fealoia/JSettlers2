@@ -2371,7 +2371,7 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                    state.updateState(this.ourPlayerData);
                     eval = state.evalFunction();
                     System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
                     try {
@@ -2395,7 +2395,7 @@ public class SOCRobotBrain extends Thread
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
-                    state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                    state.updateState(this.ourPlayerData);
                     eval = state.evalFunction();
                     System.out.println(ourPlayerName + " ROAD " + state + eval);
                     try {
@@ -2430,7 +2430,7 @@ public class SOCRobotBrain extends Thread
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
 
-                    state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                    state.updateState(this.ourPlayerData);
                     eval = state.evalFunction();
                     System.out.println(ourPlayerName + " city " + state + eval);
                     try {
@@ -2611,7 +2611,7 @@ public class SOCRobotBrain extends Thread
 
         }
 
-          state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+          state.updateState(this.ourPlayerData);
     }
 
     /**
@@ -2633,7 +2633,7 @@ public class SOCRobotBrain extends Thread
         counter = 0;
         client.playDevCard(game, SOCDevCardConstants.KNIGHT);
         pause(1500);
-        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        state.updateState(this.ourPlayerData);
         eval = state.evalFunction();
         System.out.println(ourPlayerName + " KNIGHT " + state + eval);
         try {
@@ -2794,7 +2794,7 @@ public class SOCRobotBrain extends Thread
 
                         //D.ebugPrintln("!! PLAYING ROAD BUILDING CARD");
                         client.playDevCard(game, SOCDevCardConstants.ROADS);
-                        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                        state.updateState(this.ourPlayerData);
                         eval = state.evalFunction();
                         System.out.println(ourPlayerName + " PLAY DEV (road builder) " + state + eval);
                         try {
@@ -2858,7 +2858,7 @@ public class SOCRobotBrain extends Thread
                 counter = 0;
                 client.playDevCard(game, SOCDevCardConstants.DISC);
                 pause(1500);
-                state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                state.updateState(this.ourPlayerData);
                 eval = state.evalFunction();
                 System.out.println(ourPlayerName + " PLAY DEV (year of plenty)" + state + eval);
                 try {
@@ -2891,7 +2891,7 @@ public class SOCRobotBrain extends Thread
                 counter = 0;
                 client.playDevCard(game, SOCDevCardConstants.MONO);
                 pause(1500);
-                state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+                state.updateState(this.ourPlayerData);
                 eval = state.evalFunction();
                 System.out.println(ourPlayerName + " PLAY DEV (monopoly)" + state + eval);
                 try {
@@ -3090,7 +3090,7 @@ public class SOCRobotBrain extends Thread
 
         default:
             SOCDisplaylessPlayerClient.handlePUTPIECE(mes, game);
-            //state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+            //state.updateState(this.ourPlayerData);
             //System.out.println(ourPlayerName + " PUTPIECE: " + mes.getPieceType() + "  " + state);
             break;
         }
@@ -3606,7 +3606,7 @@ public class SOCRobotBrain extends Thread
         {
         case SOCPossiblePiece.CARD:
             client.buyDevCard(game);
-            state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+            state.updateState(this.ourPlayerData);
             eval = state.evalFunction();
             System.out.println(ourPlayerName + " BUY DEV " +state + eval);
             waitingForDevCard = true;
@@ -4629,7 +4629,7 @@ public class SOCRobotBrain extends Thread
         lastStartingPieceCoord = ourPlayerData.firstSettlementCoord = firstSettlement;
         client.putPiece(game, new SOCSettlement(ourPlayerData, firstSettlement, null));
         pause(1000);
-        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        state.updateState(this.ourPlayerData);
         eval = state.evalFunction();
         System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
         try {
@@ -4667,7 +4667,7 @@ public class SOCRobotBrain extends Thread
         lastStartingPieceCoord = ourPlayerData.secondSettlementCoord = initSettlement;
         client.putPiece(game, new SOCSettlement(ourPlayerData, initSettlement, null));
         pause(1000);
-        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        state.updateState(this.ourPlayerData);
         eval = state.evalFunction();
         System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
         try {
@@ -4704,7 +4704,7 @@ public class SOCRobotBrain extends Thread
         lastStartingRoadTowardsNode = openingBuildStrategy.getPlannedInitRoadDestinationNode();
         client.putPiece(game, new SOCRoad(ourPlayerData, roadEdge, null));
         pause(1000);
-        state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+        state.updateState(this.ourPlayerData);
         eval = state.evalFunction();
         System.out.println(ourPlayerName + " ROAD " + state + eval);
         try {

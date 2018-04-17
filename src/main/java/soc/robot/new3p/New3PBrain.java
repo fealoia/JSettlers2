@@ -164,7 +164,7 @@ public class New3PBrain extends SOCRobotBrain
     			SOCDevCardConstants.ROADS, SOCDevCardConstants.DISC, SOCDevCardConstants.MONO,
     			SOCDevCardConstants.KNIGHT));
 
-      	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+      	state.updateState(this.ourPlayerData);
     	currentChoiceEval = state.evalFunction();
     	currentChoice = null;
 
@@ -303,7 +303,7 @@ public class New3PBrain extends SOCRobotBrain
         	for(Integer settlement : settlements) {
 	    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
 	    		 game.putTempPiece(temp);
-	        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	        	 state.updateState(this.ourPlayerData);
 	        	 Double eval = state.evalFunction();
 	       // 	 System.out.println("Settlement Eval: " + eval);
 	        	 if(eval > currentChoiceEval) {
@@ -323,7 +323,7 @@ public class New3PBrain extends SOCRobotBrain
 	    	for(Integer road : roads) {
 	    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
 	   		 	game.putTempPiece(temp);
-	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	   		 	state.updateState(this.ourPlayerData);
 		   		 Double eval = state.evalFunction();
 	        //	 System.out.println("Road Eval: " + eval);
 	        	 if(eval > currentChoiceEval) {
@@ -344,7 +344,7 @@ public class New3PBrain extends SOCRobotBrain
 	    		if(!player.isPotentialCity(city)) continue;
 	    		SOCCity temp = new SOCCity(player, city, game.getBoard());
 	   		 	game.putTempPiece(temp);
-	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	   		 	state.updateState(this.ourPlayerData);
 		   		 Double eval = state.evalFunction();
 	        //	 System.out.println("City Eval: " + eval);
 	        	 if(eval > currentChoiceEval) {
@@ -360,7 +360,7 @@ public class New3PBrain extends SOCRobotBrain
 
     	if(game.couldBuyDevCard(player.playerNumber)) {
     		player.getInventory().addDevCard(1, 1, SOCDevCardConstants.UNKNOWN);
-   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   		 	state.updateState(this.ourPlayerData);
    		 	Double eval = state.evalFunction();
    		 	if(eval > currentChoiceEval) {
    		 		currentChoiceEval = eval;

@@ -1992,6 +1992,40 @@ public class SOCDBHelper
         }
     }
 
+    public static void finalStateRepresentation(final String stateVector, final String move) throws SQLException {
+        if (testOne_doesTableExist("finalStateRepresentation", true, false) == false) {
+            String sql = "CREATE TABLE finalStateRepresentation(" +
+                "clayInHand INT, oreInHand INT, sheepInHand INT, wheatInHand INT, woodInHand INT," +
+                "knightsAvailableToPlay INT, DISCAvailableToPlay INT, MONOAvailableToPlay INT, RBAvailableToPlay INT," +
+                "Total VP," +
+                "relativeLongestRoad INT, relativeLargestArmy INT," +
+                "nextBestSettlementValue, nextBestSettlementAndRoadValue, nextBestCityValue," +
+                "relativeOre INT, relativeClay INT, relativeSheep INT, relativeWheat INT, relativeWood INT," +
+                "hasClayPort TEXT, hasOrePort TEXT, hasSheepPort TEXT, hasWheatPort TEXT, hasWoodPort TEXT, hasMiscPort TEXT," +
+                "chosenMove TEXT);";
+            try {
+                runDDL(sql);
+            }
+            catch (SQLException se) {
+                    throw se;
+            }
+        }
+
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("INSERT into stateTransition VALUES(");
+        sql.append(stateVector);
+        sql.append("\'" + move + "\'");
+        sql.append(")");
+
+        try {
+            runDDL(sql.toString());
+        }
+        catch (SQLException se) {
+            se.printStackTrace();
+                throw se;
+        }
+    }
 
 
 
