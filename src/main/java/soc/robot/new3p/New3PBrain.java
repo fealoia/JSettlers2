@@ -22,6 +22,7 @@ package soc.robot.new3p;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Vector;
 
 import soc.game.SOCCity;
 import soc.game.SOCDevCardConstants;
@@ -40,6 +41,7 @@ import soc.robot.SOCRobotBrain;
 import soc.robot.SOCRobotClient;
 import soc.util.CappedQueue;
 import soc.util.SOCRobotParameters;
+import soc.server.database.SOCDBHelper;
 
 public class New3PBrain extends SOCRobotBrain
 {
@@ -296,6 +298,10 @@ public class New3PBrain extends SOCRobotBrain
 
     private void playerSimulation(SOCPlayer player) {
     	SOCGame game = player.game;
+			boolean builtSettlement = false;
+			boolean builtCity =  false;
+			boolean builtRoad = false;
+			boolean builtDev  = false;
 
     	if(game.couldBuildSettlement(player.playerNumber)) {
         	@SuppressWarnings("unchecked")
@@ -312,6 +318,8 @@ public class New3PBrain extends SOCRobotBrain
 	        		 currentChoice = posTemp;
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
+							 builtCity = builtRoad = builtDev = false;
+							 builtSettlement = true;
 	        	 }
 	    		 game.undoPutTempPiece(temp);
 	    	 }
@@ -332,6 +340,8 @@ public class New3PBrain extends SOCRobotBrain
 	        		 currentChoice = posTemp;
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
+							 builtCity = builtSettlement = builtDev = false;
+							 builtRoad = true;
 	        	 }
 	   		 	game.undoPutTempPiece(temp);
 	    	}
@@ -353,6 +363,8 @@ public class New3PBrain extends SOCRobotBrain
 	        		 currentChoice = posTemp;
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
+							 builtSettlement = builtRoad = builtDev = false;
+							 builtCity = true;
 	        	 }
 	   		 	game.undoPutTempPiece(temp);
 	    	}
@@ -367,8 +379,57 @@ public class New3PBrain extends SOCRobotBrain
    		 		SOCPossibleCard posTemp = new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.UNKNOWN);
 	        	buildingPlan.clear();
 	        	buildingPlan.push(posTemp);
+						builtCity = builtRoad = builtSettlement = false;
+						builtRoad = true;
    		 	}
    		 	player.getInventory().removeDevCard(1, SOCDevCardConstants.UNKNOWN);
     	}
+
+
+			if (builtSettlement) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 0, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on Settlement:" + e);
+				}
+			}
+
+			else if (builtCity) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 1, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on City:" + e);
+				}
+			}
+
+			else if (builtRoad) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 2, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on Road:" + e);
+				}
+			}
+
+			else if (builtDev) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 4, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on Dev Card:" + e);
+				}
+			}
+
+			else{
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 5, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on endturn:" + e);
+				}
+			}
+
     }
 }

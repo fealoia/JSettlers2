@@ -1992,17 +1992,17 @@ public class SOCDBHelper
         }
     }
 
-    public static void finalStateRepresentation(final String stateVector, final String move) throws SQLException {
+    public static void finalStateRepresentation(final String stateVector, final int move, final SOCPlayer player) throws SQLException {
         if (testOne_doesTableExist("finalStateRepresentation", true, false) == false) {
             String sql = "CREATE TABLE finalStateRepresentation(" +
                 "clayInHand INT, oreInHand INT, sheepInHand INT, wheatInHand INT, woodInHand INT," +
                 "knightsAvailableToPlay INT, DISCAvailableToPlay INT, MONOAvailableToPlay INT, RBAvailableToPlay INT," +
-                "Total VP," +
+                "TotalVP INT," +
                 "relativeLongestRoad INT, relativeLargestArmy INT," +
-                "nextBestSettlementValue, nextBestSettlementAndRoadValue, nextBestCityValue," +
-                "relativeOre INT, relativeClay INT, relativeSheep INT, relativeWheat INT, relativeWood INT," +
-                "hasClayPort TEXT, hasOrePort TEXT, hasSheepPort TEXT, hasWheatPort TEXT, hasWoodPort TEXT, hasMiscPort TEXT," +
-                "chosenMove TEXT);";
+                "nextBestSettlementValue DOUBLE(10,5), nextBestSettlementAndRoadValue DOUBLE(10,5), nextBestCityValue DOUBLE(10,5)," +
+                "relativeClay DOUBLE(10,5), relativeOre DOUBLE(10,5), relativeSheep DOUBLE(10,5), relativeWheat DOUBLE(10,5), relativeWood DOUBLE(10,5)," +
+                "hasClayPort INT, hasOrePort INT, hasSheepPort INT, hasWheatPort INT, hasWoodPort INT, hasMiscPort INT," +
+                "chosenMove INT);";
             try {
                 runDDL(sql);
             }
@@ -2012,11 +2012,13 @@ public class SOCDBHelper
         }
 
         StringBuilder sql = new StringBuilder();
-
-        sql.append("INSERT into stateTransition VALUES(");
+        System.out.println(player.playerNumber);
+        sql.append("INSERT into finalStateRepresentation VALUES(");
         sql.append(stateVector);
         sql.append("\'" + move + "\'");
         sql.append(")");
+
+
 
         try {
             runDDL(sql.toString());

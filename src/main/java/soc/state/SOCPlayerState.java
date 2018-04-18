@@ -37,6 +37,10 @@ public class SOCPlayerState {
 	protected int woodPort;
 	protected int miscPort;
 	protected int opponentRoadAwayEval;
+	protected int hasKnightToPlay;
+	protected int hasDISCToPlay;
+	protected int hasMONOToPlay;
+	protected int hasRBToPlay;
 	protected double resourceTotal;
 	protected double relativeClay;
 	protected double relativeOre;
@@ -44,9 +48,9 @@ public class SOCPlayerState {
 	protected double relativeWheat;
 	protected double relativeWood;
 	protected double longestRoadEval;
-	protected double knightEval;
+	protected double largestArmyEval;
 	protected double sum;
-	protected double resourceEval;
+	protected double relativeResourceEval;
 	protected double nextBestSettlementValue;
 	protected double nextBestSettlementAndRoadValue = 0;
 	protected double nextBestCityValue;
@@ -127,13 +131,22 @@ public class SOCPlayerState {
 		estimate.recalculateEstimates(player.getNumbers());
 		int[] playerResources = estimate.getRollsPerResource();
 
-
+		clayPort = (portClay) ? 1 : 0;
+		orePort = (portOre) ? 1 : 0;
+		sheepPort = (portSheep) ? 1 : 0;
+		wheatPort = (portWheat) ? 1 : 0;
+		woodPort = (portWood) ? 1 : 0;
 
 		relativeClay = playerResources[1] > 0 ? (1.0 / playerResources[1]) / boardClay : 0;
 		relativeOre = playerResources[2] > 0 ? (1.0 / playerResources[2]) / boardOre : 0;
 		relativeSheep = playerResources[3] > 0 ? (1.0 / playerResources[3]) / boardSheep : 0;
 		relativeWheat = playerResources[4] > 0 ? (1.0 / playerResources[4]) / boardWheat : 0;
 		relativeWood = playerResources[5] > 0 ? (1.0 / playerResources[5]) / boardWood : 0;
+
+		hasKnightToPlay = newInventory.hasPlayable(SOCDevCardConstants.KNIGHT) ? 1 : 0;
+		hasDISCToPlay = newInventory.hasPlayable(SOCDevCardConstants.DISC) ? 1 : 0;
+		hasMONOToPlay = newInventory.hasPlayable(SOCDevCardConstants.MONO) ? 1 : 0;
+		hasRBToPlay = newInventory.hasPlayable(SOCDevCardConstants.ROADS) ? 1 : 0;
 
 		portClay = player.getPortFlag(SOCBoard.CLAY_PORT);
 		portOre = player.getPortFlag(SOCBoard.ORE_PORT);
@@ -246,43 +259,43 @@ public class SOCPlayerState {
 
 	public double evalFunction(){
 
+		//number of resources in hand
+		double resourcesInHand = .5 * (resources.getAmount(0) + resources.getAmount(0)*(clayPort) +
+												resources.getAmount(1) + resources.getAmount(1)*(orePort) +
+												resources.getAmount(2) + resources.getAmount(2)*(sheepPort) +
+												resources.getAmount(3) + resources.getAmount(3)*(wheatPort) +
+												resources.getAmount(4) + resources.getAmount(4)*(woodPort));
+
+		//playable dev cards in hand
+		double devCardsInHand = 	2.5 * (hasKnightToPlay + hasDISCToPlay + hasMONOToPlay + hasRBToPlay);
+
+		//relative longest road
 		longestRoadEval = Math.cbrt(200*relativeLongestRoadLength);
-		knightEval = Math.cbrt(400*relativeKnightsPlayed);
 
-		if (opponentRoadsAway == Integer.MAX_VALUE)
-			opponentRoadAwayEval = 7;
-		else if(opponentRoadsAway == 3)
-			opponentRoadAwayEval = 5;
-		else if(opponentRoadsAway == 2)
-			opponentRoadAwayEval = 2;
-		else if(opponentRoadsAway == 1)
-			opponentRoadAwayEval = -1;
+		//relative largest army
+		largestArmyEval = Math.cbrt(400*relativeKnightsPlayed);
 
-		clayPort = (portClay) ? 1 : 0;
-		orePort = (portOre) ? 1 : 0;
-		sheepPort = (portSheep) ? 1 : 0;
-		wheatPort = (portWheat) ? 1 : 0;
-		woodPort = (portWood) ? 1 : 0;
 
+		//relative resources eval
 		if (portMisc){
-			resourceEval =  13*(relativeOre + relativeOre*(orePort) +
+			relativeResourceEval =  13*(relativeOre + relativeOre*(orePort) +
 													relativeClay + relativeClay*(clayPort) +
 													relativeWood + relativeWood*(woodPort) +
 													relativeSheep + relativeSheep*(sheepPort) +
 													relativeWheat + relativeWheat*(wheatPort));
 		}
 		else{
-			resourceEval =  8*(relativeOre + relativeOre*(orePort) +
+			relativeResourceEval =  8*(relativeOre + relativeOre*(orePort) +
 													relativeClay + relativeClay*(clayPort) +
 													relativeWood + relativeWood*(woodPort) +
 													relativeSheep + relativeSheep*(sheepPort) +
 													relativeWheat + relativeWheat*(wheatPort));
 		}
 
-		int devCardTotal = newInventory.getTotal();
-		double resourceTotalEval = resourceTotal * .5;
-
-		sum = longestRoadEval + knightEval + opponentRoadAwayEval + resourceEval + devCardTotal + resourceTotalEval + nextBestSettlementValue;
+		sum = resourcesInHand + devCardsInHand + victoryPoints +
+					longestRoadEval + largestArmyEval +
+					nextBestSettlementValue + nextBestSettlementAndRoadValue + nextBestCityValue +
+					relativeResourceEval;
 		return sum;
 	}
 
@@ -333,13 +346,13 @@ public class SOCPlayerState {
 		//amount of wood in hand
 		stateVector.addElement(resources.getAmount(4));
 		//has knight to play this turn
-		stateVector.addElement(newInventory.hasPlayable(SOCDevCardConstants.KNIGHT));
+		stateVector.addElement(hasKnightToPlay);
 		//has year of plenty to play this turn
-		stateVector.addElement(newInventory.hasPlayable(SOCDevCardConstants.DISC));
+		stateVector.addElement(hasDISCToPlay);
 		//has monopoly to play this turn
-		stateVector.addElement(newInventory.hasPlayable(SOCDevCardConstants.MONO));
+		stateVector.addElement(hasMONOToPlay);
 		//has road builder to play this turn
-		stateVector.addElement(newInventory.hasPlayable(SOCDevCardConstants.ROADS));
+		stateVector.addElement(hasRBToPlay);
 		//number of VP player has
 		stateVector.addElement(victoryPoints);
 		//relative longest road
@@ -382,12 +395,6 @@ public class SOCPlayerState {
 	public String stateToString(Vector stateVector){
 		stateVector.toString();
 		StringBuilder rel = new StringBuilder();
-		rel.append(String.valueOf(portClay) + "\',");
-		rel.append("\'" + String.valueOf(portOre) + "\',");
-		rel.append("\'" + String.valueOf(portSheep) + "\',");
-		rel.append("\'" + String.valueOf(portWheat) + "\',");
-		rel.append("\'" + String.valueOf(portWood) + "\',");
-		rel.append("\'" + String.valueOf(portMisc));
 		for (Object element : stateVector) {
 			rel.append("\'" + element + "\',");
 		}
