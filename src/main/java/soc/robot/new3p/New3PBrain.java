@@ -43,6 +43,7 @@ import soc.robot.SOCRobotClient;
 import soc.state.SOCPlayerState;
 import soc.util.CappedQueue;
 import soc.util.SOCRobotParameters;
+import soc.server.database.SOCDBHelper;
 
 public class New3PBrain extends SOCRobotBrain
 {
@@ -74,7 +75,7 @@ public class New3PBrain extends SOCRobotBrain
     
     @Override
     protected void planBuilding() {
-    	planBuilding(0);
+    	planBuilding(0); // Will switch to 1 once I check out the results, but for now it's good to get data
     }
 
     @Override
@@ -174,7 +175,7 @@ public class New3PBrain extends SOCRobotBrain
     			SOCDevCardConstants.ROADS, SOCDevCardConstants.DISC, SOCDevCardConstants.MONO,
     			SOCDevCardConstants.KNIGHT));
 
-      	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+      	state.updateState(this.ourPlayerData);
     	currentChoiceEval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 
     	for(int devCardNum : devCardNums) {
@@ -305,37 +306,48 @@ public class New3PBrain extends SOCRobotBrain
 
     protected void playerSimulation(SOCPlayer player, int turnLookAhead) {
     	SOCGame game = player.game;
+        boolean builtSettlement = false;
+	boolean builtCity =  false;
+	boolean builtRoad = false;
+	boolean builtDev  = false;
+
     	if(game.couldBuildSettlement(player.playerNumber)) {
+	    	System.out.println("SETTLEMENT for player: " + player + " " + player.getPotentialSettlements().size());
         	@SuppressWarnings("unchecked")
 			HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
         	for(Integer settlement : settlements) {
 	    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
 	    		 game.putTempPiece(temp);
-	        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	        	 state.updateState(this.ourPlayerData);
 	        	 Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleSettlement posTemp = new SOCPossibleSettlement(player, settlement, null);
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
+							 builtCity = builtRoad = builtDev = false;
+							 builtSettlement = true;
 	        	 }
 	    		 game.undoPutTempPiece(temp);
 	    	 }
     	}
 
     	if(game.couldBuildRoad(player.playerNumber)) {
+	    	System.out.println("ROADS for player: " + player + " " + player.getPotentialRoads().size());
 	    	@SuppressWarnings("unchecked")
 			HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
 	    	for(Integer road : roads) {
 	    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
 	   		 	game.putTempPiece(temp); //seemingly cant create an error if this is commented??
-	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	   		 	state.updateState(this.ourPlayerData);
 		   		 Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleRoad posTemp = new SOCPossibleRoad(player, road, null);
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
+							 builtCity = builtSettlement = builtDev = false;
+							 builtRoad = true;
 	        	 }
 	   		 	game.undoPutTempPiece(temp);
 	    	}
@@ -348,13 +360,15 @@ public class New3PBrain extends SOCRobotBrain
 	    		int city = set.getCoordinates();
 	    		SOCCity temp = new SOCCity(player, city, game.getBoard());
 	   		 	game.putTempPiece(temp);
-	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+	   		 	state.updateState(this.ourPlayerData);
 		   		 Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleCity posTemp = new SOCPossibleCity(player, city);
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
+							 builtSettlement = builtRoad = builtDev = false;
+							 builtCity = true;
 	        	 }
 	   		 	game.undoPutTempPiece(temp);
 	    	}
@@ -362,26 +376,73 @@ public class New3PBrain extends SOCRobotBrain
 
     	if(game.couldBuyDevCard(player.playerNumber)) {
     		player.getInventory().addDevCard(1, 1, SOCDevCardConstants.UNKNOWN);
-   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
+   		 	state.updateState(this.ourPlayerData);
    		 	Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
    		 	if(eval > currentChoiceEval) {
    		 		currentChoiceEval = eval;
    		 		SOCPossibleCard posTemp = new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.UNKNOWN);
 	        	buildingPlan.clear();
 	        	buildingPlan.push(posTemp);
+						builtCity = builtRoad = builtSettlement = false;
+						builtRoad = true;
    		 	}
    		 	player.getInventory().removeDevCard(1, SOCDevCardConstants.UNKNOWN);
     	}
+
+			Vector stateVector = state.getState();
+
+			if (builtSettlement) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 0, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on Settlement:" + e);
+				}
+			}
+
+			else if (builtCity) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 1, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on City:" + e);
+				}
+			}
+
+			else if (builtRoad) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 2, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on Road:" + e);
+				}
+			}
+
+			else if (builtDev) {
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 4, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on Dev Card:" + e);
+				}
+			}
+
+			else{
+				try {
+					SOCDBHelper.finalStateRepresentation(state.stateToString(stateVector), 5, player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on endturn:" + e);
+				}
+			}
+
     }
     
     Double minPossibleEval(SOCPlayer player, int turnsLookAhead) {
 		New3PBrain tempBrain = new New3PBrain(this);
-		tempBrain.state.updateState(player, decisionMaker.getFavoriteSettlement());
+		tempBrain.state.updateState(player);
 		tempBrain.playerSimulation(player, -1); 
     	double minEval = tempBrain.currentChoiceEval;
-    	
-    	state.updateState(player, decisionMaker.getFavoriteSettlement());
-    	planBuilding(-1);
     	
     	//Other player cities do not effect future moves
     	if(turnsLookAhead == 1) {
@@ -398,7 +459,7 @@ public class New3PBrain extends SOCRobotBrain
 				HashSet<Integer> roads = (HashSet<Integer>) players[i].getPotentialRoads().clone();
     			for(Integer road : roads) {
     	    		SOCRoad temp = new SOCRoad(players[i], road, game.getBoard());
-    	   		// 	game.putTempPiece(temp); //I believe this is the last thing causing an error
+    	   		 	game.putTempPiece(temp); 
     	    		if(players[i].getNumPieces(SOCPlayingPiece.SETTLEMENT) >= 1) {
         	    		@SuppressWarnings("unchecked")
         				HashSet<Integer> settlements = (HashSet<Integer>) players[i].getPotentialSettlements().clone();
@@ -406,9 +467,8 @@ public class New3PBrain extends SOCRobotBrain
         		    		SOCSettlement tempSet = new SOCSettlement(players[i], settlement, game.getBoard());
         	        		game.putTempPiece(tempSet);
         	        		
-        	        		tempBrain.state.updateState(player, decisionMaker.getFavoriteSettlement());
-        	        		planBuilding(-1);
-
+        	        		tempBrain.state.updateState(player);
+        	        		tempBrain.playerSimulation(player,  -1); //Definitely causing the issue
         	        		if(tempBrain.currentChoiceEval < minEval) {
         	        			minEval = tempBrain.currentChoiceEval;
         	        		}
@@ -416,7 +476,7 @@ public class New3PBrain extends SOCRobotBrain
         	        		game.undoPutTempPiece(tempSet);
         	        	}
         	        }
-    		//		game.undoPutTempPiece(temp);
+    				game.undoPutTempPiece(temp);
     			}	
     			players[i].setNumKnights(origKnights);
     		}
