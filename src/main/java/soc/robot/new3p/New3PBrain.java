@@ -385,6 +385,7 @@ public class New3PBrain extends SOCRobotBrain
    		 	player.getInventory().removeDevCard(1, SOCDevCardConstants.UNKNOWN);
     	}
 
+			Vector stateVector = state.getState();
 
 			if (builtSettlement) {
 				try {
