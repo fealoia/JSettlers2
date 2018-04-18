@@ -2477,7 +2477,8 @@ public class SOCServer extends Server
             {
                 String rname = "robot " + (i+1);
                 if(i%2 == 0) {
-                        SOCLocalRobotClient.createAndStartRobotClientThread(rname, strSocketName, port, robotCookie);
+                        //SOCLocalRobotClient.createAndStartRobotClientThread(rname, strSocketName, port, robotCookie);
+                        SOCLocalRobotClient.createAndStartNewRobotThread(rname, strSocketName, port, robotCookie);
                 } else {
                         SOCLocalRobotClient.createAndStartNewRobotThread(rname, strSocketName, port, robotCookie);
                 }

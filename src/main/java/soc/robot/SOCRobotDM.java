@@ -374,7 +374,7 @@ public class SOCRobotDM
 
     switch (strategy) {
     case SMART_STRATEGY:
-      smartGameStrategy(currentBuildingETAs);
+   //   smartGameStrategy(currentBuildingETAs);
       break;
 
     case FAST_STRATEGY:

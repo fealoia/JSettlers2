@@ -22,11 +22,13 @@ package soc.robot.new3p;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Vector;
 
 import soc.game.SOCCity;
 import soc.game.SOCDevCardConstants;
 import soc.game.SOCGame;
 import soc.game.SOCPlayer;
+import soc.game.SOCPlayingPiece;
 import soc.game.SOCResourceSet;
 import soc.game.SOCRoad;
 import soc.game.SOCSettlement;
@@ -38,33 +40,41 @@ import soc.robot.SOCPossibleRoad;
 import soc.robot.SOCPossibleSettlement;
 import soc.robot.SOCRobotBrain;
 import soc.robot.SOCRobotClient;
+import soc.state.SOCPlayerState;
 import soc.util.CappedQueue;
 import soc.util.SOCRobotParameters;
 
 public class New3PBrain extends SOCRobotBrain
 {
 	Double currentChoiceEval;
-	SOCPossiblePiece currentChoice;
 
     public New3PBrain(SOCRobotClient rc, SOCRobotParameters params, SOCGame ga, CappedQueue<SOCMessage> mq)
     {
         super(rc, params, ga, mq);
-
-    	this.currentChoiceEval = Double.NEGATIVE_INFINITY;
-    	this.currentChoice = null;
+        this.currentChoiceEval = Double.NEGATIVE_INFINITY;
+    }
+    
+    public New3PBrain(New3PBrain brain) {
+    	this(brain.client, brain.robotParameters, brain.game, brain.gameEventQ);
+        this.state = new SOCPlayerState(brain.state);
+        setOurPlayerData();
     }
 
-    @Override
-    protected final void planBuilding()
+    protected final void planBuilding(int lookahead)
     {
-    	playerOptions(ourPlayerData);
+    	playerOptions(ourPlayerData, lookahead);
 
-    	if (! buildingPlan.empty())
+    	if (! buildingPlan.empty() && lookahead > -1)
         {
             lastTarget = buildingPlan.peek();
             if(!(lastTarget instanceof SOCPossibleCard))
             	negotiator.setTargetPiece(ourPlayerNumber, lastTarget);
         }
+    }
+    
+    @Override
+    protected void planBuilding() {
+    	planBuilding(0);
     }
 
     @Override
@@ -159,20 +169,19 @@ public class New3PBrain extends SOCRobotBrain
           }
         }
 
-    private void playerOptions(SOCPlayer player) {
+    private void playerOptions(SOCPlayer player, int turnLookAhead) {
     	Set<Integer> devCardNums = new HashSet<Integer>(Arrays.asList(0,
     			SOCDevCardConstants.ROADS, SOCDevCardConstants.DISC, SOCDevCardConstants.MONO,
     			SOCDevCardConstants.KNIGHT));
 
       	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-    	currentChoiceEval = state.evalFunction();
-    	currentChoice = null;
+    	currentChoiceEval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 
     	for(int devCardNum : devCardNums) {
     		if (devCardNum == 0) {
-    			playerSimulation(player);
-    		//	System.out.println("Final Eval:" + currentChoiceEval + " for Player: " + ourPlayerNumber);
-    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
+    			playerSimulation(player, turnLookAhead);
+    		} else if(devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber) && 
+    				!ourPlayerData.hasPlayedDevCard() && player.getNumPieces(SOCPlayingPiece.ROAD) >= 2) {
     			Double prevEval = currentChoiceEval;
     			SOCPossibleRoad road1 = null;
     			SOCPossibleRoad road2 = null;
@@ -187,7 +196,7 @@ public class New3PBrain extends SOCRobotBrain
     				for(Integer secondRoad : secondRoads) {
         	    		SOCRoad secondTemp = new SOCRoad(player, secondRoad, game.getBoard());
         	    		game.putTempPiece(secondTemp);
-        	    		playerSimulation(player);
+        	    		playerSimulation(player, turnLookAhead);
         	    		game.undoPutTempPiece(secondTemp);
 
         	    		if(prevEval != currentChoiceEval) {
@@ -221,7 +230,7 @@ public class New3PBrain extends SOCRobotBrain
 
     				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
     						|| (!origCouldCity && newCouldCity))
-    					playerSimulation(player);
+    					playerSimulation(player, turnLookAhead);
 
     				player.getResources().subtract(2, i);
     			}
@@ -237,7 +246,7 @@ public class New3PBrain extends SOCRobotBrain
 
 	    				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
 	    						|| (!origCouldCity && newCouldCity))
-	    					playerSimulation(player);
+	    					playerSimulation(player, turnLookAhead);
 
 	    				player.getResources().subtract(1, i);
 	    				player.getResources().subtract(1, j);
@@ -253,27 +262,27 @@ public class New3PBrain extends SOCRobotBrain
     			Double prevEval = currentChoiceEval;
 
     			player.getResources().add(temp);
-    			playerSimulation(player);
+    			playerSimulation(player, turnLookAhead);
     			player.getResources().subtract(temp);
 
     			temp = new SOCResourceSet(0, 5, 0, 0, 0, 0);
     			player.getResources().add(temp);
-    			playerSimulation(player);
+    			playerSimulation(player, turnLookAhead);
     			player.getResources().subtract(temp);
 
     			temp = new SOCResourceSet(0, 0, 5, 0, 0, 0);
     			player.getResources().add(temp);
-    			playerSimulation(player);
+    			playerSimulation(player, turnLookAhead);
     			player.getResources().subtract(temp);
 
     			temp = new SOCResourceSet(0, 0, 0, 5, 0, 0);
     			player.getResources().add(temp);
-    			playerSimulation(player);
+    			playerSimulation(player, turnLookAhead);
     			player.getResources().subtract(temp);
 
     			temp = new SOCResourceSet(0, 0, 0, 0, 5, 0);
     			player.getResources().add(temp);
-    			playerSimulation(player);
+    			playerSimulation(player, turnLookAhead);
     			player.getResources().subtract(temp);
 
     			if(prevEval != currentChoiceEval) {
@@ -284,7 +293,7 @@ public class New3PBrain extends SOCRobotBrain
     			int origKnights = player.getNumKnights();
     			player.incrementNumKnights();
     			Double prevEval = currentChoiceEval;
-    			playerSimulation(player);
+    			playerSimulation(player, turnLookAhead);
     			player.setNumKnights(origKnights);
     			if(prevEval != currentChoiceEval) {
     				 buildingPlan.clear();
@@ -294,9 +303,8 @@ public class New3PBrain extends SOCRobotBrain
     	}
     }
 
-    private void playerSimulation(SOCPlayer player) {
+    protected void playerSimulation(SOCPlayer player, int turnLookAhead) {
     	SOCGame game = player.game;
-
     	if(game.couldBuildSettlement(player.playerNumber)) {
         	@SuppressWarnings("unchecked")
 			HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
@@ -304,12 +312,10 @@ public class New3PBrain extends SOCRobotBrain
 	    		 SOCSettlement temp = new SOCSettlement(player, settlement, game.getBoard());
 	    		 game.putTempPiece(temp);
 	        	 state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-	        	 Double eval = state.evalFunction();
-	       // 	 System.out.println("Settlement Eval: " + eval);
+	        	 Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleSettlement posTemp = new SOCPossibleSettlement(player, settlement, null);
-	        		 currentChoice = posTemp;
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
 	        	 }
@@ -322,14 +328,12 @@ public class New3PBrain extends SOCRobotBrain
 			HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
 	    	for(Integer road : roads) {
 	    		SOCRoad temp = new SOCRoad(player, road, game.getBoard());
-	   		 	game.putTempPiece(temp);
+	   		 	game.putTempPiece(temp); //seemingly cant create an error if this is commented??
 	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-		   		 Double eval = state.evalFunction();
-	        //	 System.out.println("Road Eval: " + eval);
+		   		 Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleRoad posTemp = new SOCPossibleRoad(player, road, null);
-	        		 currentChoice = posTemp;
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
 	        	 }
@@ -339,18 +343,16 @@ public class New3PBrain extends SOCRobotBrain
 
     	if(game.couldBuildCity(player.playerNumber)) {
 	    	@SuppressWarnings("unchecked")
-			HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
-	    	for(Integer city : cities) {
-	    		if(!player.isPotentialCity(city)) continue;
+			Vector<SOCSettlement> cities = (Vector<SOCSettlement>) player.getSettlements().clone();
+	    	for(SOCSettlement set : cities) {
+	    		int city = set.getCoordinates();
 	    		SOCCity temp = new SOCCity(player, city, game.getBoard());
 	   		 	game.putTempPiece(temp);
 	   		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-		   		 Double eval = state.evalFunction();
-	        //	 System.out.println("City Eval: " + eval);
+		   		 Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
 	        	 if(eval > currentChoiceEval) {
 	        		 currentChoiceEval = eval;
 		    		 SOCPossibleCity posTemp = new SOCPossibleCity(player, city);
-	        		 currentChoice = posTemp;
 	        		 buildingPlan.clear();
 	        		 buildingPlan.push(posTemp);
 	        	 }
@@ -361,7 +363,7 @@ public class New3PBrain extends SOCRobotBrain
     	if(game.couldBuyDevCard(player.playerNumber)) {
     		player.getInventory().addDevCard(1, 1, SOCDevCardConstants.UNKNOWN);
    		 	state.updateState(this.ourPlayerData, decisionMaker.getFavoriteSettlement());
-   		 	Double eval = state.evalFunction();
+   		 	Double eval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.evalFunction();
    		 	if(eval > currentChoiceEval) {
    		 		currentChoiceEval = eval;
    		 		SOCPossibleCard posTemp = new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.UNKNOWN);
@@ -370,5 +372,55 @@ public class New3PBrain extends SOCRobotBrain
    		 	}
    		 	player.getInventory().removeDevCard(1, SOCDevCardConstants.UNKNOWN);
     	}
+    }
+    
+    Double minPossibleEval(SOCPlayer player, int turnsLookAhead) {
+		New3PBrain tempBrain = new New3PBrain(this);
+		tempBrain.state.updateState(player, decisionMaker.getFavoriteSettlement());
+		tempBrain.playerSimulation(player, -1); 
+    	double minEval = tempBrain.currentChoiceEval;
+    	
+    	state.updateState(player, decisionMaker.getFavoriteSettlement());
+    	planBuilding(-1);
+    	
+    	//Other player cities do not effect future moves
+    	if(turnsLookAhead == 1) {
+    		SOCPlayer[] players = player.game.getPlayers();
+    		for(int i=0; i<players.length; i++) {
+    			if(i == player.playerNumber) continue;
+    			
+				int origKnights = players[i].getNumKnights();
+    			if(players[i].hasUnplayedDevCards()) {
+    				players[i].incrementNumKnights();
+    			}
+    			//Currently assuming max build in a turn is 1 road and 1 settlement -- for speed
+    			@SuppressWarnings("unchecked")
+				HashSet<Integer> roads = (HashSet<Integer>) players[i].getPotentialRoads().clone();
+    			for(Integer road : roads) {
+    	    		SOCRoad temp = new SOCRoad(players[i], road, game.getBoard());
+    	   		// 	game.putTempPiece(temp); //I believe this is the last thing causing an error
+    	    		if(players[i].getNumPieces(SOCPlayingPiece.SETTLEMENT) >= 1) {
+        	    		@SuppressWarnings("unchecked")
+        				HashSet<Integer> settlements = (HashSet<Integer>) players[i].getPotentialSettlements().clone();
+        	        	for(Integer settlement : settlements) {
+        		    		SOCSettlement tempSet = new SOCSettlement(players[i], settlement, game.getBoard());
+        	        		game.putTempPiece(tempSet);
+        	        		
+        	        		tempBrain.state.updateState(player, decisionMaker.getFavoriteSettlement());
+        	        		planBuilding(-1);
+
+        	        		if(tempBrain.currentChoiceEval < minEval) {
+        	        			minEval = tempBrain.currentChoiceEval;
+        	        		}
+        	        		
+        	        		game.undoPutTempPiece(tempSet);
+        	        	}
+        	        }
+    		//		game.undoPutTempPiece(temp);
+    			}	
+    			players[i].setNumKnights(origKnights);
+    		}
+    	}
+    	return minEval;
     }
 }

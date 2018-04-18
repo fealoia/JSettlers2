@@ -26,7 +26,9 @@ package soc.server;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
+import soc.client.SOCHandPanel;
 import soc.debug.D;
 import soc.game.SOCBoardLarge;
 import soc.game.SOCCity;
@@ -1413,9 +1415,10 @@ public class SOCGameMessageHandler
                 {
                     srv.messageToPlayer(c, gaName, "You can't make that trade.");
                     SOCClientData scd = (SOCClientData) c.getAppData();
-                    if ((scd != null) && scd.isRobot)
+                    if ((scd != null) && scd.isRobot) {
                         D.ebugPrintln("ILLEGAL BANK TRADE: " + c.getData()
                           + ": give " + give + ", get " + get);
+                        System.exit(0);}
                 }
             }
             else
@@ -1993,7 +1996,12 @@ public class SOCGameMessageHandler
                                 SOCPlayingPiece pp = ga.getBoard().roadAtEdge(coord);
                                 D.ebugPrintln(" - roadAtEdge: " + ((pp != null) ? pp : "none"));
                             }
-
+                            Vector<Integer> temp = ga.getBoard().getAdjacentEdgesToEdge(coord);
+                            for (Integer o : temp) {
+                                    System.out.print(o + " ");
+                            }
+                            System.out.println();
+                        System.exit(0);
                             srv.messageToPlayerKeyed(c, gaName, "action.build.cannot.there.road");
                                 // "You can't build a road there."
                             sendDenyReply = true;
@@ -2047,16 +2055,8 @@ public class SOCGameMessageHandler
                                 SOCPlayingPiece pp = ga.getBoard().settlementAtNode(coord);
                                 D.ebugPrintln(" - settlementAtNode: " + ((pp != null) ? pp : "none"));
                             }
-
-                            srv.messageToPlayerKeyed(c, gaName, "action.build.cannot.there.stlmt");
-                                // "You can't build a settlement there."
-                            sendDenyReply = true;
-                        }
+                            System.exit(0);
                     }
-                    else
-                    {
-                        srv.messageToPlayerKeyed(c, gaName, "action.build.cannot.now.stlmt");
-                            // "You can't build a settlement now."
                     }
 
                     break;
@@ -2105,6 +2105,7 @@ public class SOCGameMessageHandler
                                 SOCPlayingPiece pp = ga.getBoard().settlementAtNode(coord);
                                 D.ebugPrintln(" - city/settlementAtNode: " + ((pp != null) ? pp : "none"));
                             }
+                        System.exit(0);
 
                             srv.messageToPlayerKeyed(c, gaName, "action.build.cannot.there.city");
                                 // "You can't build a city there."

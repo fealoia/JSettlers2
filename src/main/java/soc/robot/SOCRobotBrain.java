@@ -294,7 +294,7 @@ public class SOCRobotBrain extends Thread
      * {@link SOCRobotDM#buildingPlan} is the same Stack.
      * @see #whatWeWantToBuild
      */
-    protected final Stack<SOCPossiblePiece> buildingPlan;
+    protected Stack<SOCPossiblePiece> buildingPlan;
 
     /**
      * This is what we tried building this turn,
@@ -754,7 +754,7 @@ public class SOCRobotBrain extends Thread
         dRecorder[0] = new DebugRecorder();
         dRecorder[1] = new DebugRecorder();
         currentDRecorder = 0;
-
+        
         // Strategy fields will be set in setOurPlayerData();
         // we don't have the data yet.
     }
@@ -3726,6 +3726,7 @@ public class SOCRobotBrain extends Thread
      */
     protected void planBuilding()
     {
+        System.out.println("SHOULDNT BE>>>");
         decisionMaker.planStuff(robotParameters.getStrategyType());
 
         if (! buildingPlan.empty())
