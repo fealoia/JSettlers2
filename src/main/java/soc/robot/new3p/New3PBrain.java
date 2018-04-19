@@ -311,8 +311,10 @@ public class New3PBrain extends SOCRobotBrain
     		SOCGame game = player.game;
 				boolean canDo = false;
 				int prediction;
+				char[] predictionChar = new char[1000];
 				String predictionString = "hello";
-				double currentBiggest = Double.NEGATIVE_INFINITY;
+				// String predictionStringTwo = "yo";
+				double currentBiggest = Double.POSITIVE_INFINITY;
 				double[] predictionArray = new double[6];
 
 
@@ -326,15 +328,18 @@ public class New3PBrain extends SOCRobotBrain
     			number.add(arrayTHree[i]);
   			}
 
-				System.out.println(stateVector);
 
 				try{
 
-				ProcessBuilder pb = new ProcessBuilder("python3","~/Desktop/Catan_Updated/Jsettlers2/src/main/java/soc/robot/new3p/prediction.py",""+number);
+				ProcessBuilder pb = new ProcessBuilder("python3","prediction.py",""+stateVector);
 				Process p = pb.start();
 
-				BufferedReader in = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				predictionString = in.readLine();
+				BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				int check = in.read(predictionChar, 0, predictionChar.length);
+				if (check > -1){
+					predictionString = new String(predictionChar);
+				}
+
 
 				}
 
@@ -342,16 +347,19 @@ public class New3PBrain extends SOCRobotBrain
 					System.out.println(e);
 				}
 
-				System.out.println(predictionString);
-				String intermediateOne = predictionString.replace("[[ ", "");
-				String intermediateTwo = intermediateOne.replace("]]", "");
-				String[] intermediateThree = intermediateTwo.split("\\s+");
-
-				for (int i =0; i < intermediateThree.length; i++){
+				System.out.println("THIS IS THE PREDICTION:" + predictionString);
+				predictionString = predictionString.substring(0, predictionString.indexOf("]"));
+				String intermediateOne = predictionString.replace("[[", "").trim();
+				// String intermediateTwo = intermediateOne.replace("]]", "");
+				String[] intermediateThree = intermediateOne.split("\\s+");
+				System.out.println(Arrays.toString(intermediateThree));
+				for (int i =0; i < intermediateThree.length - 1; i++){
 				  predictionArray[i] = Double.parseDouble(intermediateThree[i]);
 				}
+
+				System.out.println("This is the prediction array:" + Arrays.toString(predictionArray));
 				//predictionArray now holds the prediction probabilities. Go through them to see what to build
-				while(canDo = false){
+				while(canDo == false){
 					Object[] array = new Object[2];
 					array = nextBiggest(predictionArray, currentBiggest);
 					prediction = (Integer)array[0];
@@ -374,6 +382,8 @@ public class New3PBrain extends SOCRobotBrain
 			int prediction = -1;
 			int i = 0;
 			for (double element : predictionArray){
+				// System.out.println("THIS IS THE ELEMNT " + element);
+				// System.out.println("CURRENT BIGGESt " + currentBiggest);
 				if ((element < currentBiggest) && (element > newmax)){
 					newmax = element;
 					prediction = i;

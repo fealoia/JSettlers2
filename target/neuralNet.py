@@ -6,7 +6,9 @@ from keras import Sequential
 from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, Dropout
 from keras import optimizers
 from sklearn.model_selection import train_test_split
+from keras.models import model_from_json
 import MySQLdb
+
 
 
 def loadData():
@@ -41,13 +43,15 @@ def loadData():
     con.close()
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.33, random_state=42)
+    print(len(x_test))
+    print(len(y_train))
 
-    yTrain = np.zeros((103,6), dtype=np.int)
-    yTest = np.zeros((51,6), dtype=np.int)
-    for i in range (0,103):
+    yTrain = np.zeros((1129,6), dtype=np.int)
+    yTest = np.zeros((557,6), dtype=np.int)
+    for i in range (0,1129):
         j = y_train[i]
         yTrain[i][j] = 1
-    for i in range(0,51):
+    for i in range(0,557):
         j = y_test[i]
         yTest[i][j] = 1
 
@@ -69,9 +73,15 @@ def trainNN(model, x_train, y_train):
 
 if __name__ == "__main__":
     x_train, x_test, y_train, y_test = loadData()
-    print(x_test)
     nn = buildNN()
     trainNN(nn, x_train, y_train)
-    prediction = [0, 0, 2, 1, 3, 0, 0, 0, 0, 3, -5, -3, 2.0, 3.6, 4.8, 0.27777777777777773, 0.0980392156862745, 0.16666666666666666, 0.07407407407407407, 0.1111111111111111, 0, 0, 0, 0, 0, 0]
-    q = nn.predict(np.array([prediction,]))
-    print(q)
+
+    model_json = nn.to_json()
+    with open("model.json", "w") as json_file:
+        json_file.write(model_json)
+    nn.save_weights("model.h5")
+    print("Saved model to disk")
+
+    # prediction = [0, 0, 2, 1, 3, 0, 0, 0, 0, 3, -5, -3, 2.0, 3.6, 4.8, 0.27777777777777773, 0.0980392156862745, 0.16666666666666666, 0.07407407407407407, 0.1111111111111111, 0, 0, 0, 0, 0, 0]
+    # q = nn.predict(np.array([prediction,]))
+    # print(q)
