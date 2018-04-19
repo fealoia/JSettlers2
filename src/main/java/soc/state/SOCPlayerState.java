@@ -336,57 +336,57 @@ public class SOCPlayerState {
 	public Vector getState(){
 		Vector stateVector = new Vector(26);
 		//amount of clay in hand
-		stateVector.addElement(resources.getAmount(0));
+		stateVector.add(resources.getAmount(0));
 		//amount of ore in hand
-		stateVector.addElement(resources.getAmount(1));
+		stateVector.add(resources.getAmount(1));
 		//amount of sheep in hand
-		stateVector.addElement(resources.getAmount(2));
+		stateVector.add(resources.getAmount(2));
 		//amount of wheat in hand
-		stateVector.addElement(resources.getAmount(3));
+		stateVector.add(resources.getAmount(3));
 		//amount of wood in hand
-		stateVector.addElement(resources.getAmount(4));
+		stateVector.add(resources.getAmount(4));
 		//has knight to play this turn
-		stateVector.addElement(hasKnightToPlay);
+		stateVector.add(hasKnightToPlay);
 		//has year of plenty to play this turn
-		stateVector.addElement(hasDISCToPlay);
+		stateVector.add(hasDISCToPlay);
 		//has monopoly to play this turn
-		stateVector.addElement(hasMONOToPlay);
+		stateVector.add(hasMONOToPlay);
 		//has road builder to play this turn
-		stateVector.addElement(hasRBToPlay);
+		stateVector.add(hasRBToPlay);
 		//number of VP player has
-		stateVector.addElement(victoryPoints);
+		stateVector.add(victoryPoints);
 		//relative longest road
-		stateVector.addElement(relativeLongestRoadLength);
+		stateVector.add(relativeLongestRoadLength);
 		//relative largest army
-		stateVector.addElement(relativeKnightsPlayed);
+		stateVector.add(relativeKnightsPlayed);
 		//rating of best settlement to build
-		stateVector.addElement(nextBestSettlementValue);
+		stateVector.add(nextBestSettlementValue);
 		//rating of best settlement to build after one road
-		stateVector.addElement(nextBestSettlementAndRoadValue);
+		stateVector.add(nextBestSettlementAndRoadValue);
 		//rating of best city to build
-		stateVector.addElement(nextBestCityValue);
+		stateVector.add(nextBestCityValue);
 		//relative clay
-		stateVector.addElement(relativeClay);
+		stateVector.add(relativeClay);
 		//relative ore
-		stateVector.addElement(relativeOre);
+		stateVector.add(relativeOre);
 		//relative sheep
-		stateVector.addElement(relativeSheep);
+		stateVector.add(relativeSheep);
 		//relative wheat
-		stateVector.addElement(relativeWheat);
+		stateVector.add(relativeWheat);
 		//relative wood
-		stateVector.addElement(relativeWood);
+		stateVector.add(relativeWood);
 		//has clay port
-		stateVector.addElement(clayPort);
+		stateVector.add(clayPort);
 		//has ore port
-		stateVector.addElement(orePort);
+		stateVector.add(orePort);
 		//has sheep port
-		stateVector.addElement(sheepPort);
+		stateVector.add(sheepPort);
 		//has wheat port
-		stateVector.addElement(wheatPort);
+		stateVector.add(wheatPort);
 		//has wood port
-		stateVector.addElement(woodPort);
+		stateVector.add(woodPort);
 		//has misc port
-		stateVector.addElement(miscPort);
+		stateVector.add(miscPort);
 
 		return stateVector;
 
