@@ -1,6 +1,7 @@
 package soc.state;
 
 import java.util.Vector;
+import java.util.HashSet;
 
 import soc.game.SOCBoard;
 import soc.game.SOCPlayer;
@@ -8,11 +9,13 @@ import soc.game.SOCPlayerNumbers;
 import soc.game.SOCRoad;
 import soc.game.SOCGame;
 import soc.game.SOCSettlement;
+import soc.game.SOCCity;
 import soc.robot.SOCRobotBrain;
 import soc.robot.new3p.New3PBrain;
 import soc.robot.SOCBuildingSpeedEstimate;
 import soc.robot.SOCPossibleSettlement;
 import soc.robot.SOCPossibleRoad;
+import soc.robot.SOCPossibleCity;
 import soc.game.SOCDevCardConstants;
 import soc.game.SOCResourceSet;
 import soc.game.SOCInventory;
@@ -21,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Collection;
 import soc.robot.SOCPlayerTracker;
+
 
 
 
@@ -49,7 +53,7 @@ public class SOCPlayerState {
 	protected double relativeWood;
 	protected double longestRoadEval;
 	protected double largestArmyEval;
-	protected double sum;
+	protected double eval;
 	protected double relativeResourceEval;
 	protected double nextBestSettlementValue;
 	protected double nextBestSettlementAndRoadValue = 0;
@@ -60,6 +64,8 @@ public class SOCPlayerState {
 	protected boolean portWheat;
 	protected boolean portWood;
 	protected boolean portMisc;
+	protected double[] relativeResources = new double[5];
+	protected int[] hasPort = new int[7];
 
 	//Helper variables
 	private SOCBoard board;
@@ -71,6 +77,9 @@ public class SOCPlayerState {
 	private double boardWood;
 	private SOCResourceSet resources;
 	private SOCInventory newInventory;
+	private SOCPossibleSettlement bestSettlement;
+	private SOCPossibleRoad bestRoad;
+	private SOCPossibleCity bestCity;
 
 
 
@@ -131,17 +140,18 @@ public class SOCPlayerState {
 		estimate.recalculateEstimates(player.getNumbers());
 		int[] playerResources = estimate.getRollsPerResource();
 
-		clayPort = (portClay) ? 1 : 0;
-		orePort = (portOre) ? 1 : 0;
-		sheepPort = (portSheep) ? 1 : 0;
-		wheatPort = (portWheat) ? 1 : 0;
-		woodPort = (portWood) ? 1 : 0;
-
 		relativeClay = playerResources[1] > 0 ? (1.0 / playerResources[1]) / boardClay : 0;
+		relativeResources[0] = relativeClay;
 		relativeOre = playerResources[2] > 0 ? (1.0 / playerResources[2]) / boardOre : 0;
+		relativeResources[1] = relativeOre;
 		relativeSheep = playerResources[3] > 0 ? (1.0 / playerResources[3]) / boardSheep : 0;
+		relativeResources[2] = relativeSheep;
 		relativeWheat = playerResources[4] > 0 ? (1.0 / playerResources[4]) / boardWheat : 0;
+		relativeResources[3] = relativeWheat;
 		relativeWood = playerResources[5] > 0 ? (1.0 / playerResources[5]) / boardWood : 0;
+		relativeResources[4] = relativeWood;
+
+		Arrays.sort(relativeResources);
 
 		hasKnightToPlay = newInventory.hasPlayable(SOCDevCardConstants.KNIGHT) ? 1 : 0;
 		hasDISCToPlay = newInventory.hasPlayable(SOCDevCardConstants.DISC) ? 1 : 0;
@@ -155,7 +165,18 @@ public class SOCPlayerState {
 		portWood = player.getPortFlag(SOCBoard.WOOD_PORT);
 		portMisc = player.getPortFlag(SOCBoard.MISC_PORT);
 
-
+		hasPort[0]= 0;
+		clayPort = (portClay) ? 1 : 0;
+		hasPort[1] = clayPort;
+		orePort = (portOre) ? 1 : 0;
+		hasPort[2] = orePort;
+		sheepPort = (portSheep) ? 1 : 0;
+		hasPort[3] = sheepPort;
+		wheatPort = (portWheat) ? 1 : 0;
+		hasPort[4] = wheatPort;
+		woodPort = (portWood) ? 1 : 0;
+		hasPort[5] = woodPort;
+		hasPort[6] = 0;
 		//getting a value of possible settlement positions - 0 if no settlements can be built
 		nextBestSettlementValue = calculateNextSettlementValue(player);
 
@@ -257,7 +278,7 @@ public class SOCPlayerState {
 	}
 
 
-	public double evalFunction(){
+	public double stateEvalFunction(){
 
 		//number of resources in hand
 		double resourcesInHand = .5 * (resources.getAmount(0) + resources.getAmount(0)*(clayPort) +
@@ -292,12 +313,286 @@ public class SOCPlayerState {
 													relativeWheat + relativeWheat*(wheatPort));
 		}
 
-		sum = resourcesInHand + devCardsInHand + victoryPoints +
+		eval = resourcesInHand + devCardsInHand + victoryPoints +
 					longestRoadEval + largestArmyEval +
 					nextBestSettlementValue + nextBestSettlementAndRoadValue + nextBestCityValue +
 					relativeResourceEval;
-		return sum;
+		return eval;
 	}
+
+	public double settlementEvalFunction(Integer settlement, SOCPlayer player){
+		int leastRelResourceType = 6;
+		int secondLeastRelResourceType = 6;
+		double leastRelResource = relativeResources[0];
+		double secondLeastRelResource = relativeResources[1];
+		boolean hexMatchesLeastRelResources = false;
+		double multiplier = 1.0;
+
+		if (leastRelResource == relativeClay) leastRelResourceType = 1;
+		if (leastRelResource == relativeOre) leastRelResourceType = 2;
+		if (leastRelResource == relativeSheep) leastRelResourceType = 3;
+		if (leastRelResource == relativeWheat) leastRelResourceType = 4;
+		if (leastRelResource == relativeWood) leastRelResourceType = 5;
+
+		if (secondLeastRelResource == relativeClay) secondLeastRelResourceType = 1;
+		if (secondLeastRelResource == relativeOre) secondLeastRelResourceType = 2;
+		if (secondLeastRelResource == relativeSheep) secondLeastRelResourceType = 3;
+		if (secondLeastRelResource == relativeWheat) secondLeastRelResourceType = 4;
+		if (secondLeastRelResource == relativeWood) secondLeastRelResourceType = 5;
+
+		if (leastRelResourceType == 6 || secondLeastRelResourceType == 6) System.out.println("ERROR!! DIDNT MATCH");
+
+		Vector<Integer> hexes = board.getAdjacentHexesToNode(settlement);
+		int y = 0;
+		for (Integer hex : hexes){
+			int x;
+			int hexType = board.getHexTypeFromCoord(hex);
+			if (hexType == leastRelResourceType || hexType == secondLeastRelResourceType) multiplier = multiplier + .5;
+			if (hexType <= 6){
+				if (hasPort[hexType] == 1) multiplier = multiplier + .5;
+			}
+			int hexNumber = board.getNumberOnHexFromCoord(hex);
+			if (hexNumber == 8 || hexNumber == 6){
+				x = 5;
+			}
+			else if (hexNumber == 9 || hexNumber == 5){
+				x = 4;
+			}
+			else if (hexNumber == 10 || hexNumber == 4){
+				x = 3;
+			}
+			else if (hexNumber == 11 || hexNumber == 3){
+				x = 2;
+			}
+			else {
+				x = 1;
+			}
+			y = y + x;
+		}
+
+		double resourcesGained = multiplier * y;
+
+		//getting how impactful builidng this settlement would be to other players
+		// ie. how many other players can/want to build there now or in the future
+		int opponentsAdjacentToSettlement = 0;
+		int opponentsAdjacentWithOneRoadToSettlement = 0;
+
+		SOCPlayer[] players = player.game.getPlayers();
+		for(SOCPlayer current : players) {
+			if(current == player) continue;
+			HashSet<Integer> settlements = (HashSet<Integer>) current.getPotentialSettlements().clone();
+			if (settlements.contains(settlement)){
+				opponentsAdjacentToSettlement++;
+			}
+			//adding an additional road to each player
+			HashSet<Integer> roads = (HashSet<Integer>) current.getPotentialRoads().clone();
+			for(Integer road : roads){
+					SOCRoad temp = new SOCRoad(current, road, board);
+					current.game.putTempPiece(temp);
+					HashSet<Integer> settlementsWithAdditionalRoad = (HashSet<Integer>) current.getPotentialSettlements().clone();
+					if (settlementsWithAdditionalRoad.contains(settlement)){
+						opponentsAdjacentWithOneRoadToSettlement++;
+						current.game.undoPutTempPiece(temp);
+						break;
+					}
+					current.game.undoPutTempPiece(temp);
+			}
+		}
+
+		double opponentImpact = opponentsAdjacentToSettlement + .5 * opponentsAdjacentWithOneRoadToSettlement;
+
+
+		//comparing relative resources with the new settlment to previous values without new settlement
+		double currentRelativeClay = relativeClay;
+		double currentRelativeOre = relativeOre;
+		double currentRelativeSheep = relativeSheep;
+		double currentRelativeWheat = relativeWheat;
+		double currentRelativeWood = relativeWood;
+
+		SOCSettlement temp = new SOCSettlement(player, settlement, player.game.getBoard());
+		player.game.putTempPiece(temp);
+		updateState(player);
+
+		double clayDifference = relativeClay - currentRelativeClay;
+		double oreDifference = relativeOre - currentRelativeOre;
+		double sheepDifference = relativeSheep - currentRelativeSheep;
+		double wheatDifference = relativeWheat - currentRelativeWheat;
+		double woodDifference = relativeWood - currentRelativeWood;
+
+		double relativeResourceGain = clayDifference + oreDifference + sheepDifference + wheatDifference + woodDifference;
+		player.game.undoPutTempPiece(temp);
+		updateState(player);
+
+		eval = resourcesGained + opponentImpact + relativeResourceGain;
+		return eval;
+	}
+
+	public double cityEvalFunction(Integer city, SOCPlayer player){
+		//getting the diffrence in in-hand resources
+		int leastRelResourceType = 6;
+		int secondLeastRelResourceType = 6;
+		double leastRelResource = relativeResources[0];
+		double secondLeastRelResource = relativeResources[1];
+		boolean hexMatchesLeastRelResources = false;
+		double multiplier = 1.0;
+
+		if (leastRelResource == relativeClay) leastRelResourceType = 1;
+		if (leastRelResource == relativeOre) leastRelResourceType = 2;
+		if (leastRelResource == relativeSheep) leastRelResourceType = 3;
+		if (leastRelResource == relativeWheat) leastRelResourceType = 4;
+		if (leastRelResource == relativeWood) leastRelResourceType = 5;
+
+		if (secondLeastRelResource == relativeClay) secondLeastRelResourceType = 1;
+		if (secondLeastRelResource == relativeOre) secondLeastRelResourceType = 2;
+		if (secondLeastRelResource == relativeSheep) secondLeastRelResourceType = 3;
+		if (secondLeastRelResource == relativeWheat) secondLeastRelResourceType = 4;
+		if (secondLeastRelResource == relativeWood) secondLeastRelResourceType = 5;
+
+		if (leastRelResourceType == 6 || secondLeastRelResourceType == 6) System.out.println("ERROR!! DIDNT MATCH");
+
+		Vector<Integer> hexes = board.getAdjacentHexesToNode(city);
+		int y = 0;
+		for (Integer hex : hexes){
+			int x;
+			int hexType = board.getHexTypeFromCoord(hex);
+			if (hexType == leastRelResourceType || hexType == secondLeastRelResourceType) multiplier = multiplier + .5;
+			if (hexType <= 6){
+				if (hasPort[hexType] == 1) multiplier = multiplier + .5;
+			}
+			int hexNumber = board.getNumberOnHexFromCoord(hex);
+			if (hexNumber == 8 || hexNumber == 6){
+				x = 5;
+			}
+			else if (hexNumber == 9 || hexNumber == 5){
+				x = 4;
+			}
+			else if (hexNumber == 10 || hexNumber == 4){
+				x = 3;
+			}
+			else if (hexNumber == 11 || hexNumber == 3){
+				x = 2;
+			}
+			else {
+				x = 1;
+			}
+			y = y + x;
+		}
+
+		double resourcesGained = multiplier * y;
+
+
+		//getting the relative resource differences
+		double currentRelativeClay = relativeClay;
+		double currentRelativeOre = relativeOre;
+		double currentRelativeSheep = relativeSheep;
+		double currentRelativeWheat = relativeWheat;
+		double currentRelativeWood = relativeWood;
+
+		SOCCity temp = new SOCCity(player, city, player.game.getBoard());
+		player.game.putTempPiece(temp);
+		updateState(player);
+
+		double clayDifference = relativeClay - currentRelativeClay;
+		double oreDifference = relativeOre - currentRelativeOre;
+		double sheepDifference = relativeSheep - currentRelativeSheep;
+		double wheatDifference = relativeWheat - currentRelativeWheat;
+		double woodDifference = relativeWood - currentRelativeWood;
+
+		double relativeResourceGain = clayDifference + oreDifference + sheepDifference + wheatDifference + woodDifference;
+		player.game.undoPutTempPiece(temp);
+		updateState(player);
+
+		eval = resourcesGained + relativeResourceGain;
+		return eval;
+	}
+
+
+	public double roadEvalFunction(Integer road, SOCPlayer player){
+		//getting value of new settlements that can be built with additional road
+		double bestCurrentSettlementValue = Double.NEGATIVE_INFINITY;
+		double bestSettlementWithAdditionalRoad = Double.NEGATIVE_INFINITY;
+		double currentLongestRoadEval = Math.cbrt(200*relativeLongestRoadLength);
+		double newEval;
+
+		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+		for(Integer settlement : settlements){
+			newEval = settlementEvalFunction(settlement, player);
+			if (newEval > bestCurrentSettlementValue) bestCurrentSettlementValue = newEval;
+		}
+
+		//adding the road
+		SOCRoad temp = new SOCRoad(player, road, player.game.getBoard());
+		player.game.putTempPiece(temp);
+		updateState(player);
+
+		double newLongestRoadEval = Math.cbrt(200*relativeLongestRoadLength);
+
+		//checking new best settlement value
+		HashSet<Integer> newSettlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+		for(Integer settlement : newSettlements){
+			newEval = settlementEvalFunction(settlement, player);
+			if (newEval > bestSettlementWithAdditionalRoad) bestSettlementWithAdditionalRoad = newEval;
+		}
+
+		player.game.undoPutTempPiece(temp);
+		updateState(player);
+
+		double changeInSettlementEval = bestSettlementWithAdditionalRoad - bestCurrentSettlementValue;
+
+		//opponent impact: how does a road negatively influence other players -- left to implement
+		double opponentImpact = 0;
+
+		//longest road difference
+		double changeInLongestRoadEval = newLongestRoadEval - currentLongestRoadEval;
+
+		eval = changeInSettlementEval + opponentImpact +  changeInLongestRoadEval;
+		return eval;
+	}
+
+	public SOCPossibleSettlement getBestSettlement(SOCPlayer player){
+		double currentEval = Double.NEGATIVE_INFINITY;
+		double newEval;
+		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+		for(Integer settlement : settlements) {
+			newEval = settlementEvalFunction(settlement, player);
+			if(newEval > currentEval) {
+					currentEval = newEval;
+					bestSettlement = new SOCPossibleSettlement(player, settlement, null);
+			}
+		}
+		return bestSettlement;
+	}
+
+	public SOCPossibleCity getBestCity(SOCPlayer player){
+		double currentEval = Double.NEGATIVE_INFINITY;
+		double newEval;
+		int city;
+		Vector<SOCSettlement> cities = (Vector<SOCSettlement>) player.getSettlements().clone();
+		for(SOCSettlement set : cities) {
+			city = set.getCoordinates();
+			newEval = cityEvalFunction(city, player);
+			if (newEval > currentEval){
+				currentEval =  newEval;
+				bestCity = new SOCPossibleCity(player, city);
+			}
+		}
+		return bestCity;
+	}
+
+	public SOCPossibleRoad getBestRoad(SOCPlayer player){
+		double currentEval = Double.NEGATIVE_INFINITY;
+		double newEval;
+		HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
+		for(Integer road : roads) {
+			newEval  = roadEvalFunction(road, player);
+			if(newEval > currentEval){
+				currentEval = newEval;
+				bestRoad = new SOCPossibleRoad(player, road, null);
+			}
+		}
+		return bestRoad;
+	}
+
 
 	//accessor Methods
 	public int getRelLongestRoad(){

@@ -754,7 +754,7 @@ public class SOCRobotBrain extends Thread
         dRecorder[0] = new DebugRecorder();
         dRecorder[1] = new DebugRecorder();
         currentDRecorder = 0;
-        
+
         // Strategy fields will be set in setOurPlayerData();
         // we don't have the data yet.
     }
@@ -2372,7 +2372,7 @@ public class SOCRobotBrain extends Thread
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
                     state.updateState(this.ourPlayerData);
-                    eval = state.evalFunction();
+                    eval = state.stateEvalFunction();
                     //System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
                     try {
                       SOCDBHelper.saveState(ourPlayerData, state, "BUILT SETTLEMENT");
@@ -2396,7 +2396,7 @@ public class SOCRobotBrain extends Thread
                     client.putPiece(game, whatWeWantToBuild);
                     pause(1000);
                     state.updateState(this.ourPlayerData);
-                    eval = state.evalFunction();
+                    eval = state.stateEvalFunction();
                     //System.out.println(ourPlayerName + " ROAD " + state + eval);
                     try {
                       SOCDBHelper.saveState(ourPlayerData, state, "BUILT ROAD");
@@ -2431,7 +2431,7 @@ public class SOCRobotBrain extends Thread
                     pause(1000);
 
                     state.updateState(this.ourPlayerData);
-                    eval = state.evalFunction();
+                    eval = state.stateEvalFunction();
                     //System.out.println(ourPlayerName + " city " + state + eval);
                     try {
                       SOCDBHelper.saveState(ourPlayerData, state, "BUILT CITY");
@@ -2634,7 +2634,7 @@ public class SOCRobotBrain extends Thread
         client.playDevCard(game, SOCDevCardConstants.KNIGHT);
         pause(1500);
         state.updateState(this.ourPlayerData);
-        eval = state.evalFunction();
+        eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " KNIGHT " + state + eval);
         try {
           SOCDBHelper.saveState(ourPlayerData, state, "PLAYED KNIGHT");
@@ -2795,7 +2795,7 @@ public class SOCRobotBrain extends Thread
                         //D.ebugPrintln("!! PLAYING ROAD BUILDING CARD");
                         client.playDevCard(game, SOCDevCardConstants.ROADS);
                         state.updateState(this.ourPlayerData);
-                        eval = state.evalFunction();
+                        eval = state.stateEvalFunction();
                         //System.out.println(ourPlayerName + " PLAY DEV (road builder) " + state + eval);
                         try {
                           SOCDBHelper.saveState(ourPlayerData, state, "PLAY ROAD BUILDER");
@@ -2859,7 +2859,7 @@ public class SOCRobotBrain extends Thread
                 client.playDevCard(game, SOCDevCardConstants.DISC);
                 pause(1500);
                 state.updateState(this.ourPlayerData);
-                eval = state.evalFunction();
+                eval = state.stateEvalFunction();
                 //System.out.println(ourPlayerName + " PLAY DEV (year of plenty)" + state + eval);
                 try {
                   SOCDBHelper.saveState(ourPlayerData, state, "PLAY YEAR OF PLENTY");
@@ -2892,7 +2892,7 @@ public class SOCRobotBrain extends Thread
                 client.playDevCard(game, SOCDevCardConstants.MONO);
                 pause(1500);
                 state.updateState(this.ourPlayerData);
-                eval = state.evalFunction();
+                eval = state.stateEvalFunction();
                 //System.out.println(ourPlayerName + " PLAY DEV (monopoly)" + state + eval);
                 try {
                   SOCDBHelper.saveState(ourPlayerData, state, "PLAY MONOPOLY");
@@ -3607,7 +3607,7 @@ public class SOCRobotBrain extends Thread
         case SOCPossiblePiece.CARD:
             client.buyDevCard(game);
             state.updateState(this.ourPlayerData);
-            eval = state.evalFunction();
+            eval = state.stateEvalFunction();
             //System.out.println(ourPlayerName + " BUY DEV " +state + eval);
             waitingForDevCard = true;
             try {
@@ -4631,7 +4631,7 @@ public class SOCRobotBrain extends Thread
         client.putPiece(game, new SOCSettlement(ourPlayerData, firstSettlement, null));
         pause(1000);
         state.updateState(this.ourPlayerData);
-        eval = state.evalFunction();
+        eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
         try {
           SOCDBHelper.saveState(ourPlayerData, state, "BUILT FIRST SETTLEMENT");
@@ -4669,7 +4669,7 @@ public class SOCRobotBrain extends Thread
         client.putPiece(game, new SOCSettlement(ourPlayerData, initSettlement, null));
         pause(1000);
         state.updateState(this.ourPlayerData);
-        eval = state.evalFunction();
+        eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
         try {
           SOCDBHelper.saveState(ourPlayerData, state, "BUILT SECOND SETTLEMENT");
@@ -4706,7 +4706,7 @@ public class SOCRobotBrain extends Thread
         client.putPiece(game, new SOCRoad(ourPlayerData, roadEdge, null));
         pause(1000);
         state.updateState(this.ourPlayerData);
-        eval = state.evalFunction();
+        eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " ROAD " + state + eval);
         try {
           SOCDBHelper.saveState(ourPlayerData, state, "BUILT INITIAL ROAD");

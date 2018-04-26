@@ -1980,7 +1980,7 @@ public class SOCDBHelper
         sql.append("\'" + state.getopponentRoadsAway() + "\',");
         sql.append("\'" + state.getRelativeResources() + "\',");
         sql.append("\'" + state.getPorts() + "\',");
-        sql.append("\'" + state.evalFunction() + "\'");
+        sql.append("\'" + state.stateEvalFunction() + "\'");
         sql.append(")");
 
         try {
