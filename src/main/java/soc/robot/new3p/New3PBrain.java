@@ -185,7 +185,7 @@ public class New3PBrain extends SOCRobotBrain
     protected void playerSimulation(SOCPlayer player, int turnLookahead) {
     		SOCGame game = player.game;
 				boolean canDo = false;
-				int prediction;
+				int prediction = -1;
 				char[] predictionChar = new char[1000];
 				double currentBiggest = Double.POSITIVE_INFINITY;
 				double[] predictionArray = new double[6];
@@ -227,10 +227,6 @@ public class New3PBrain extends SOCRobotBrain
 
 				//predictionArray now holds the prediction probabilities. Go through them to see what to build
 				while(canDo == false){
-					state.getBestSettlement(player);
-					state.getBestCity(player);
-					state.getBestRoad(player);
-					state.getBestDevCard(player);
 					Object[] array = new Object[2];
 					array = nextBiggest(predictionArray, currentBiggest);
 					prediction = (Integer)array[0];
@@ -239,11 +235,10 @@ public class New3PBrain extends SOCRobotBrain
 					}
 					currentBiggest = (Double)array[1];
 					canDo = canBuild(prediction, player, turnLookahead);
-					if (canDo == true){
-						System.out.println("DOING ACTION " + prediction);
-						System.out.println("0 = building settlement, 1 = building city, 2 = building road, 3 = playing dev card, 4 = buying dev card, 5 = endturn");
-					}
 				}
+
+				System.out.println("DOING ACTION " + prediction);
+				System.out.println("0 = building settlement, 1 = building city, 2 = building road, 3 = playing dev card, 4 = buying dev card, 5 = endturn");
 
 		}
 
@@ -273,6 +268,7 @@ public class New3PBrain extends SOCRobotBrain
 					//build a settlement
 					if (prediction == 0 && game.couldBuildSettlement(player.playerNumber)){
 						canDo = true;
+						System.out.println("PROBLEM WAS WITH SETTLEMENT");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestSettlement(player));
 				  }
@@ -280,6 +276,7 @@ public class New3PBrain extends SOCRobotBrain
 					//build a city
 					else if (prediction == 1 && game.couldBuildCity(player.playerNumber)) {
 						canDo = true;
+						System.out.println("PROBLEM WAS WITH CITY");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestCity(player));
 			    }
@@ -287,6 +284,7 @@ public class New3PBrain extends SOCRobotBrain
 					//build a road
 					else if (prediction == 2 && game.couldBuildRoad(player.playerNumber)){
 						canDo = true;
+						System.out.println("PROBLEM WAS WITH ROAD");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestRoad(player));
 					}
@@ -294,9 +292,9 @@ public class New3PBrain extends SOCRobotBrain
 					//play a dev card
 					else if (prediction == 3){
 						String card = state.getBestDevCard(player);
-						System.out.println("Player " + player.getPlayerNumber() + " BEST CARD " + card);
 						if (card.equals("RB")) {
 							canDo = true;
+							System.out.println("PROBLEM WAS WITH RB");
 							buildingPlan.clear();
 							SOCPossibleRoad road1 = state.getBestRoad(player);
 							SOCRoad temp1 = new SOCRoad(player, road1.getCoordinates(), player.game.getBoard());
@@ -311,30 +309,35 @@ public class New3PBrain extends SOCRobotBrain
 						}
 						else if (card.equals("DISC")) {
 							canDo = true;
+							System.out.println("PROBLEM WAS WITH DISC");
 							buildingPlan.clear();
 							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.DISC));
 						}
 						else if (card.equals("MONO")) {
 							canDo = true;
+							System.out.println("PROBLEM WAS WITH MONO");
 							buildingPlan.clear();
 							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.MONO));
 						}
 						else if (card.equals("KNIGHT")) {
 							canDo = true;
+							System.out.println("PROBLEM WAS WITH KNIGHT");
 							buildingPlan.clear();
 							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.KNIGHT));
 						}
 						else if (card.equals("nothing")){
+							System.out.println("PROBLEM WAS WITH NOTHING");
 							canDo = false;
-							System.out.println("YOFOAFKAD:FKHIDSHAGSDGSDBJHKDJHKJDHKJHDJ");
 						}
 						else{
+							System.out.println("PROBLEM WAS WITH ELSE STATEMENT");
 							canDo = false;
 						}
 					}
 					//buy a dev card
 					else if (prediction == 4 && game.couldBuyDevCard(player.playerNumber)) {
 				  	canDo = true;
+						System.out.println("PROBLEM WAS WITH BUYING DEV");
 				    SOCPossibleCard posTemp = new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.UNKNOWN);
 					  buildingPlan.clear();
 					  buildingPlan.push(posTemp);
@@ -342,6 +345,7 @@ public class New3PBrain extends SOCRobotBrain
 
 					//end turn
 					else {
+						System.out.println("PROBLEM WAS WITH END TURN");
 						canDo = true;
 					}
 					return canDo;
