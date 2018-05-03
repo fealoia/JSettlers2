@@ -1162,6 +1162,7 @@ public class SOCPlayerState {
 		for(SOCSettlement set : cities) {
 			city = set.getCoordinates();
 			if (player.isPotentialCity(city)){
+				System.out.println("SPOT " + city + " IS VALID");
 				newEval = cityEvalFunction(city, player);
 				DecimalFormat df = new DecimalFormat("#.#####");
 				newEval = Double.valueOf(df.format(newEval));

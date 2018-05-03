@@ -279,6 +279,7 @@ public class New3PBrain extends SOCRobotBrain
 						System.out.println("PROBLEM WAS WITH CITY");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestCity(player));
+						System.out.println("BUILD ON CITY SPOT: " + state.getBestCity(player).getCoordinates());
 			    }
 
 					//build a road
