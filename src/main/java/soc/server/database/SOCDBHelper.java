@@ -1992,6 +1992,109 @@ public class SOCDBHelper
         }
     }
 
+    public static void settlementNormalization(final double eval) throws SQLException {
+      if (testOne_doesTableExist("settlementNormalization", true, false) == false) {
+        String sql = "CREATE TABLE settlementNormalization(settlementEvaluation DOUBLE);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into settlementNormalization VALUES(");
+      sql.append("\'" + eval + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
+    public static void cityNormalization(final double eval) throws SQLException {
+      if (testOne_doesTableExist("cityNormalization", true, false) == false) {
+        String sql = "CREATE TABLE cityNormalization(cityEvaluation DOUBLE);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into cityNormalization VALUES(");
+      sql.append("\'" + eval + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
+    public static void roadNormalization(final double eval) throws SQLException {
+      if (testOne_doesTableExist("roadNormalization", true, false) == false) {
+        String sql = "CREATE TABLE roadNormalization(roadEvaluation DOUBLE);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into roadNormalization VALUES(");
+      sql.append("\'" + eval + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
+    public static void devNormalization(final String type, final double eval) throws SQLException {
+      if (testOne_doesTableExist("devNormalization", true, false) == false) {
+        String sql = "CREATE TABLE devNormalization(typeOfCard TEXT, devEvaluation DOUBLE);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into devNormalization VALUES(");
+      sql.append("\'" + type + "\',");
+      sql.append("\'" + eval + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
+
+
     public static void finalStateRepresentation(final String stateVector, final int move, final SOCPlayer player) throws SQLException {
         if (testOne_doesTableExist("finalStateRepresentation", true, false) == false) {
             String sql = "CREATE TABLE finalStateRepresentation(" +
@@ -2012,7 +2115,6 @@ public class SOCDBHelper
         }
 
         StringBuilder sql = new StringBuilder();
-        System.out.println(player.playerNumber);
         sql.append("INSERT into finalStateRepresentation VALUES(");
         sql.append(stateVector);
         sql.append("\'" + move + "\'");

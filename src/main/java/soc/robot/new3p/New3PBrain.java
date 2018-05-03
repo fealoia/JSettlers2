@@ -192,32 +192,45 @@ public class New3PBrain extends SOCRobotBrain
 				String predictionString = "";
 
 				state.updateState(this.ourPlayerData);
+
+			 /*//new updates start here
+			 	int action = -1;
+				int position = -1;
+
+				action, position = state.getActionPair();
+				*/
 				Vector stateVector = state.getState();
+				//
+				// try{
+				// 	ProcessBuilder pb = new ProcessBuilder("python3","prediction.py",""+stateVector);
+				// 	Process p = pb.start();
+				//
+				// 	BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				// 	int check = in.read(predictionChar, 0, predictionChar.length);
+				// 	if (check > -1){
+				// 		predictionString = new String(predictionChar);
+				// 	}
+				// }
+				// catch(Exception e){
+				// 	System.out.println(e);
+				// }
 
-				try{
-					ProcessBuilder pb = new ProcessBuilder("python3","prediction.py",""+stateVector);
-					Process p = pb.start();
 
-					BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-					int check = in.read(predictionChar, 0, predictionChar.length);
-					if (check > -1){
-						predictionString = new String(predictionChar);
-					}
-				}
-				catch(Exception e){
-					System.out.println(e);
-				}
+				// predictionString = predictionString.substring(0, predictionString.indexOf("]"));
+				// String intermediateOne = predictionString.replace("[[", "").trim();
+				// String[] intermediateThree = intermediateOne.split("\\s+");
+				// for (int i =0; i < intermediateThree.length - 1; i++){
+				//   predictionArray[i] = Double.parseDouble(intermediateThree[i]);
+				// }
 
-
-				predictionString = predictionString.substring(0, predictionString.indexOf("]"));
-				String intermediateOne = predictionString.replace("[[", "").trim();
-				String[] intermediateThree = intermediateOne.split("\\s+");
-				for (int i =0; i < intermediateThree.length - 1; i++){
-				  predictionArray[i] = Double.parseDouble(intermediateThree[i]);
-				}
+				predictionArray = state.getAction(player);
 
 				//predictionArray now holds the prediction probabilities. Go through them to see what to build
 				while(canDo == false){
+					state.getBestSettlement(player);
+					state.getBestCity(player);
+					state.getBestRoad(player);
+					state.getBestDevCard(player);
 					Object[] array = new Object[2];
 					array = nextBiggest(predictionArray, currentBiggest);
 					prediction = (Integer)array[0];
@@ -280,146 +293,45 @@ public class New3PBrain extends SOCRobotBrain
 
 					//play a dev card
 					else if (prediction == 3){
-						Set<Integer> devCardNums = new HashSet<Integer>(Arrays.asList(0,
-			    			SOCDevCardConstants.ROADS, SOCDevCardConstants.DISC, SOCDevCardConstants.MONO,
-			    			SOCDevCardConstants.KNIGHT));
-
-			    	currentChoiceEval = turnLookAhead == 1 ? minPossibleEval(player, 1) : state.stateEvalFunction();
-						//determine which is the best dev card to play
-			    	for(int devCardNum : devCardNums) {
-							//dont have a dev card
-			    		if (devCardNum == 0) {
-			    			canDo = false;
-			    		}
-							//road builder
-							else if (devCardNum == SOCDevCardConstants.ROADS && game.canPlayRoadBuilding(player.playerNumber) &&
-			    									!ourPlayerData.hasPlayedDevCard() && player.getNumPieces(SOCPlayingPiece.ROAD) >= 2) {
-								canDo = true;
-			    			Double prevEval = currentChoiceEval;
-			    			SOCPossibleRoad road1 = null;
-			    			SOCPossibleRoad road2 = null;
-								HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
-			    			for(Integer road : roads) {
-			    	    	SOCRoad temp = new SOCRoad(player, road, game.getBoard());
-			    	   		game.putTempPiece(temp);
-									HashSet<Integer> secondRoads = (HashSet<Integer>) player.getPotentialRoads().clone();
-			    				for(Integer secondRoad : secondRoads) {
-			        	  	SOCRoad secondTemp = new SOCRoad(player, secondRoad, game.getBoard());
-			        	    game.putTempPiece(secondTemp);
-			        	    playerSimulation(player, turnLookAhead);
-			        	    game.undoPutTempPiece(secondTemp);
-			        	    if (prevEval != currentChoiceEval) {
-			        	    	prevEval = currentChoiceEval;
-			        	    	road1 = new SOCPossibleRoad(ourPlayerData, temp.getCoordinates(), null);
-			        	    	road2 = new SOCPossibleRoad(ourPlayerData, secondTemp.getCoordinates(), null);
-			        	    }
-			    				}
-			    				game.undoPutTempPiece(temp);
-			    			}
-
-			    			if (road1 != null) {
-									buildingPlan.clear();
-									buildingPlan.push(road2);
-									buildingPlan.push(road1);
-				        	buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.ROADS));
-			    			}
-			    		}
-							//YOP
-							else if (devCardNum == SOCDevCardConstants.DISC && game.canPlayDiscovery(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
-			    			canDo = true;
-								Double prevEval = currentChoiceEval;
-								Boolean origCouldSettlement = game.couldBuildSettlement(player.playerNumber);
-								Boolean origCouldRoad = game.couldBuildRoad(player.playerNumber);
-								Boolean origCouldCity = game.couldBuildCity(player.playerNumber);
-
-			    			for(int i=0; i<5; i++) {
-			    				player.getResources().add(2, i);
-
-			    				Boolean newCouldSettlement = game.couldBuildSettlement(player.playerNumber);
-			    				Boolean newCouldRoad = game.couldBuildRoad(player.playerNumber);
-			    				Boolean newCouldCity = game.couldBuildCity(player.playerNumber);
-
-			    				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
-			    						|| (!origCouldCity && newCouldCity))
-			    					playerSimulation(player, turnLookAhead);
-
-			    				player.getResources().subtract(2, i);
-			    			}
-
-			    			for(int i=0; i<5; i++) {
-			    				for(int j=i+1; j<5; j++) {
-				    				player.getResources().add(1, i);
-				    				player.getResources().add(1, j);
-
-				    				Boolean newCouldSettlement = game.couldBuildSettlement(player.playerNumber);
-				    				Boolean newCouldRoad = game.couldBuildRoad(player.playerNumber);
-				    				Boolean newCouldCity = game.couldBuildCity(player.playerNumber);
-
-				    				if((!origCouldSettlement && newCouldSettlement) || (!origCouldRoad && newCouldRoad)
-				    						|| (!origCouldCity && newCouldCity))
-				    					playerSimulation(player, turnLookAhead);
-
-				    				player.getResources().subtract(1, i);
-				    				player.getResources().subtract(1, j);
-				    			}
-			    			}
-
-			    			if (prevEval != currentChoiceEval) {
-			      				 buildingPlan.clear();
-			      				 buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.DISC));
-			       		}
-			    		}
-							//monopoly
-							else if (devCardNum == SOCDevCardConstants.MONO && game.canPlayMonopoly(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
-			    			canDo = true;
-								SOCResourceSet temp = new SOCResourceSet(5, 0, 0, 0, 0, 0); //Simplifying with 5 cards received
-			    			Double prevEval = currentChoiceEval;
-
-			    			player.getResources().add(temp);
-			    			playerSimulation(player, turnLookAhead);
-			    			player.getResources().subtract(temp);
-
-			    			temp = new SOCResourceSet(0, 5, 0, 0, 0, 0);
-			    			player.getResources().add(temp);
-			    			playerSimulation(player, turnLookAhead);
-			    			player.getResources().subtract(temp);
-
-			    			temp = new SOCResourceSet(0, 0, 5, 0, 0, 0);
-			    			player.getResources().add(temp);
-			    			playerSimulation(player, turnLookAhead);
-			    			player.getResources().subtract(temp);
-
-			    			temp = new SOCResourceSet(0, 0, 0, 5, 0, 0);
-			    			player.getResources().add(temp);
-			    			playerSimulation(player, turnLookAhead);
-			    			player.getResources().subtract(temp);
-
-			    			temp = new SOCResourceSet(0, 0, 0, 0, 5, 0);
-			    			player.getResources().add(temp);
-			    			playerSimulation(player, turnLookAhead);
-			    			player.getResources().subtract(temp);
-
-			    			if (prevEval != currentChoiceEval) {
-			   					buildingPlan.clear();
-				        	buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.MONO));
-			    			}
-			    		}
-							//knight
-							else if (devCardNum == SOCDevCardConstants.KNIGHT && game.canPlayKnight(player.playerNumber) && !ourPlayerData.hasPlayedDevCard()) {
-			    			canDo = true;
-								int origKnights = player.getNumKnights();
-			    			player.incrementNumKnights();
-			    			Double prevEval = currentChoiceEval;
-			    			playerSimulation(player, turnLookAhead);
-			    			player.setNumKnights(origKnights);
-			    			if(prevEval != currentChoiceEval) {
-			    				buildingPlan.clear();
-				        	buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.KNIGHT));
-			    			}
-			    		}
-			    	}
-			    }
-
+						String card = state.getBestDevCard(player);
+						System.out.println("Player " + player.getPlayerNumber() + " BEST CARD " + card);
+						if (card.equals("RB")) {
+							canDo = true;
+							buildingPlan.clear();
+							SOCPossibleRoad road1 = state.getBestRoad(player);
+							SOCRoad temp1 = new SOCRoad(player, road1.getCoordinates(), player.game.getBoard());
+							player.game.putTempPiece(temp1);
+							state.updateState(player);
+							SOCPossibleRoad road2 = state.getBestRoad(player);
+							player.game.undoPutTempPiece(temp1);
+							state.updateState(player);
+							buildingPlan.push(road2);
+							buildingPlan.push(road1);
+							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.ROADS));
+						}
+						else if (card.equals("DISC")) {
+							canDo = true;
+							buildingPlan.clear();
+							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.DISC));
+						}
+						else if (card.equals("MONO")) {
+							canDo = true;
+							buildingPlan.clear();
+							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.MONO));
+						}
+						else if (card.equals("KNIGHT")) {
+							canDo = true;
+							buildingPlan.clear();
+							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.KNIGHT));
+						}
+						else if (card.equals("nothing")){
+							canDo = false;
+							System.out.println("YOFOAFKAD:FKHIDSHAGSDGSDBJHKDJHKJDHKJHDJ");
+						}
+						else{
+							canDo = false;
+						}
+					}
 					//buy a dev card
 					else if (prediction == 4 && game.couldBuyDevCard(player.playerNumber)) {
 				  	canDo = true;

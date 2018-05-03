@@ -2,6 +2,7 @@ package soc.state;
 
 import java.util.Vector;
 import java.util.HashSet;
+import java.text.DecimalFormat;
 
 import soc.game.SOCBoard;
 import soc.game.SOCPlayer;
@@ -24,6 +25,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Collection;
 import soc.robot.SOCPlayerTracker;
+import soc.server.database.SOCDBHelper;
+import soc.robot.SOCPossibleCard;
+import soc.game.SOCPlayingPiece;
 
 
 
@@ -66,6 +70,10 @@ public class SOCPlayerState {
 	protected boolean portMisc;
 	protected double[] relativeResources = new double[5];
 	protected int[] hasPort = new int[7];
+	protected double settlementNormalizer = 370 - .18;
+	protected double cityNormalizer = 630 - .2143;
+	protected double roadNormalizer = 23.75032 + .5;
+	protected double devCardNormalizer = 1;
 
 	//Helper variables
 	private SOCBoard board;
@@ -424,7 +432,7 @@ public class SOCPlayerState {
 		updateState(player);
 
 		eval = resourcesGained + opponentImpact + relativeResourceGain;
-		return eval;
+		return eval/settlementNormalizer;
 	}
 
 	public double cityEvalFunction(Integer city, SOCPlayer player){
@@ -503,21 +511,24 @@ public class SOCPlayerState {
 		updateState(player);
 
 		eval = resourcesGained + relativeResourceGain;
-		return eval;
+		return eval/cityNormalizer;
 	}
 
 
 	public double roadEvalFunction(Integer road, SOCPlayer player){
 		//getting value of new settlements that can be built with additional road
-		double bestCurrentSettlementValue = Double.NEGATIVE_INFINITY;
-		double bestSettlementWithAdditionalRoad = Double.NEGATIVE_INFINITY;
+		double bestCurrentSettlementValue = -1;
+		double bestSettlementWithAdditionalRoad = -1;
 		double currentLongestRoadEval = Math.cbrt(200*relativeLongestRoadLength);
 		double newEval;
 
 		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+
 		for(Integer settlement : settlements){
 			newEval = settlementEvalFunction(settlement, player);
-			if (newEval > bestCurrentSettlementValue) bestCurrentSettlementValue = newEval;
+			if (newEval > bestCurrentSettlementValue){
+				bestCurrentSettlementValue = newEval;
+			}
 		}
 
 		//adding the road
@@ -529,16 +540,18 @@ public class SOCPlayerState {
 
 		//checking new best settlement value
 		HashSet<Integer> newSettlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+
 		for(Integer settlement : newSettlements){
 			newEval = settlementEvalFunction(settlement, player);
-			if (newEval > bestSettlementWithAdditionalRoad) bestSettlementWithAdditionalRoad = newEval;
+			if (newEval > bestSettlementWithAdditionalRoad) {
+				bestSettlementWithAdditionalRoad = newEval;
+			}
 		}
 
 		player.game.undoPutTempPiece(temp);
 		updateState(player);
 
 		double changeInSettlementEval = bestSettlementWithAdditionalRoad - bestCurrentSettlementValue;
-
 		//opponent impact: how does a road negatively influence other players -- left to implement
 		double opponentImpact = 0;
 
@@ -546,7 +559,286 @@ public class SOCPlayerState {
 		double changeInLongestRoadEval = newLongestRoadEval - currentLongestRoadEval;
 
 		eval = changeInSettlementEval + opponentImpact +  changeInLongestRoadEval;
-		return eval;
+		return eval/roadNormalizer;
+	}
+
+	public double devCardEvalFunction (String card, SOCPlayer player){
+		double roadBuildingEval = -1;
+		double discEval = -1;
+		double monoEval = -1;
+		double knightEval = -1;
+
+		Boolean origCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+		Boolean origCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+		Boolean origCouldCity = player.game.couldBuildCity(player.playerNumber);
+		Boolean newCouldSettlement = false;
+		Boolean newCouldRoad = false;
+		Boolean newCouldCity = false;
+
+		if (card.equals("RB")) {
+			SOCPossibleRoad road1 = getBestRoad(player);
+			double evalRoadOne =  roadEvalFunction(road1.getCoordinates(), player);
+			SOCRoad temp1 = new SOCRoad(player, road1.getCoordinates(), player.game.getBoard());
+			player.game.putTempPiece(temp1);
+			updateState(player);
+			SOCPossibleRoad road2 = getBestRoad(player);
+			double evalRoadTwo = roadEvalFunction(road2.getCoordinates(), player);
+			player.game.undoPutTempPiece(temp1);
+			updateState(player);
+			roadBuildingEval = evalRoadOne + evalRoadTwo;
+			try {
+				SOCDBHelper.devNormalization("RB", roadBuildingEval);
+			}
+			catch (Exception e){
+				 System.err.println("Error updating on RB:" + e);
+			}
+			return roadBuildingEval;
+		}
+
+		else if (card.equals("DISC")) {
+			double bestEvalOne = -1;
+			double bestEvalTwo = -1;
+			double settlementEval = -1;
+			double cityEval = -1;
+			double roadEval = -1;
+
+			for(int i=0; i<5; i++) {
+				player.getResources().add(2, i);
+
+				newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+				newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+				newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+				if(!origCouldSettlement && newCouldSettlement){
+					SOCPossibleSettlement settlement = getBestSettlement(player);
+					settlementEval = settlementEvalFunction(settlement.getCoordinates(), player);
+				}
+				if(!origCouldRoad && newCouldRoad){
+					SOCPossibleRoad road = getBestRoad(player);
+					roadEval = roadEvalFunction(road.getCoordinates(), player);
+				}
+				if (!origCouldCity && newCouldCity) {
+					SOCPossibleCity city = getBestCity(player);
+					cityEval = cityEvalFunction(city.getCoordinates(), player);
+				}
+				double maxOne = Math.max(settlementEval, Math.max(roadEval, cityEval));
+				if (maxOne > bestEvalOne){
+					bestEvalOne = maxOne;
+				}
+				player.getResources().subtract(2, i);
+			}
+
+			for(int i=0; i<5; i++) {
+				for(int j=i+1; j<5; j++) {
+					player.getResources().add(1, i);
+					player.getResources().add(1, j);
+
+					newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+					newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+					newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+					if(!origCouldSettlement && newCouldSettlement){
+						SOCPossibleSettlement settlement = getBestSettlement(player);
+						settlementEval = settlementEvalFunction(settlement.getCoordinates(), player);
+					}
+					if(!origCouldRoad && newCouldRoad){
+						SOCPossibleRoad road = getBestRoad(player);
+						roadEval = roadEvalFunction(road.getCoordinates(), player);
+					}
+					if (!origCouldCity && newCouldCity) {
+						SOCPossibleCity city = getBestCity(player);
+						cityEval = cityEvalFunction(city.getCoordinates(), player);
+					}
+					double maxTwo = Math.max(settlementEval, Math.max(roadEval, cityEval));
+					if(maxTwo > bestEvalTwo){
+						bestEvalTwo = maxTwo;
+					}
+
+					player.getResources().subtract(1, i);
+					player.getResources().subtract(1, j);
+				}
+			}
+
+			discEval = Math.max(bestEvalOne, bestEvalTwo);
+			try {
+				SOCDBHelper.devNormalization("DISC", discEval);
+			}
+			catch (Exception e){
+				 System.err.println("Error updating on discovery:" + e);
+			}
+			return discEval;
+		}
+
+		else if (card.equals("MONO")) {
+			double bestClay = -1;
+			double bestOre = -1;
+			double bestSheep = -1;
+			double bestWheat = -1;
+			double bestWood = -1;
+
+			double settlementEvalClay = -1;
+			double roadEvalClay = -1;
+			double cityEvalClay = -1;
+
+			double settlementEvalOre = -1;
+			double roadEvalOre = -1;
+			double cityEvalOre = -1;
+
+			double settlementEvalSheep = -1;
+			double roadEvalSheep = -1;
+			double cityEvalSheep = -1;
+
+			double settlementEvalWheat = -1;
+			double roadEvalWheat = -1;
+			double cityEvalWheat = -1;
+
+			double settlementEvalWood = -1;
+			double roadEvalWood = -1;
+			double cityEvalWood = -1;
+
+			SOCResourceSet temp = new SOCResourceSet(5, 0, 0, 0, 0, 0); //Simplifying with 5 cards received
+			player.getResources().add(temp);
+			newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+			newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+			newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+			if(!origCouldSettlement && newCouldSettlement){
+				SOCPossibleSettlement settlementClay = getBestSettlement(player);
+				settlementEvalClay = settlementEvalFunction(settlementClay.getCoordinates(), player);
+			}
+			if(!origCouldRoad && newCouldRoad){
+				SOCPossibleRoad roadClay = getBestRoad(player);
+				roadEvalClay = roadEvalFunction(roadClay.getCoordinates(), player);
+			}
+			if (!origCouldCity && newCouldCity) {
+				SOCPossibleCity cityClay = getBestCity(player);
+				cityEvalClay = cityEvalFunction(cityClay.getCoordinates(), player);
+			}
+			player.getResources().subtract(temp);
+			bestClay = Math.max(settlementEvalClay, Math.max(roadEvalClay, cityEvalClay));
+
+			temp = new SOCResourceSet(0, 5, 0, 0, 0, 0);
+			player.getResources().add(temp);
+			newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+			newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+			newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+			if(!origCouldSettlement && newCouldSettlement){
+				SOCPossibleSettlement settlementOre = getBestSettlement(player);
+				settlementEvalOre = settlementEvalFunction(settlementOre.getCoordinates(), player);
+			}
+			if(!origCouldRoad && newCouldRoad){
+				SOCPossibleRoad roadOre = getBestRoad(player);
+				roadEvalOre = roadEvalFunction(roadOre.getCoordinates(), player);
+			}
+			if (!origCouldCity && newCouldCity) {
+				SOCPossibleCity cityOre = getBestCity(player);
+				cityEvalOre = cityEvalFunction(cityOre.getCoordinates(), player);
+			}
+			player.getResources().subtract(temp);
+			bestOre = Math.max(settlementEvalOre, Math.max(roadEvalOre, cityEvalOre));
+
+			temp = new SOCResourceSet(0, 0, 5, 0, 0, 0);
+			player.getResources().add(temp);
+			newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+			newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+			newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+			if(!origCouldSettlement && newCouldSettlement){
+				SOCPossibleSettlement settlementSheep = getBestSettlement(player);
+				settlementEvalSheep = settlementEvalFunction(settlementSheep.getCoordinates(), player);
+			}
+			if(!origCouldRoad && newCouldRoad){
+				SOCPossibleRoad roadSheep = getBestRoad(player);
+				roadEvalSheep = roadEvalFunction(roadSheep.getCoordinates(), player);
+			}
+			if (!origCouldCity && newCouldCity) {
+				SOCPossibleCity citySheep = getBestCity(player);
+				cityEvalSheep = cityEvalFunction(citySheep.getCoordinates(), player);
+			}
+			player.getResources().subtract(temp);
+			bestSheep = Math.max(settlementEvalSheep, Math.max(roadEvalSheep, cityEvalSheep));
+
+			temp = new SOCResourceSet(0, 0, 0, 5, 0, 0);
+			player.getResources().add(temp);
+			newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+			newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+			newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+			if(!origCouldSettlement && newCouldSettlement){
+				SOCPossibleSettlement settlementWheat = getBestSettlement(player);
+				settlementEvalWheat = settlementEvalFunction(settlementWheat.getCoordinates(), player);
+			}
+			if(!origCouldRoad && newCouldRoad){
+				SOCPossibleRoad roadWheat = getBestRoad(player);
+				roadEvalWheat = roadEvalFunction(roadWheat.getCoordinates(), player);
+			}
+			if (!origCouldCity && newCouldCity) {
+				SOCPossibleCity cityWheat = getBestCity(player);
+				cityEvalWheat = cityEvalFunction(cityWheat.getCoordinates(), player);
+			}
+			player.getResources().subtract(temp);
+			bestWheat = Math.max(settlementEvalWheat, Math.max(roadEvalWheat, cityEvalWheat));
+
+			temp = new SOCResourceSet(0, 0, 0, 0, 5, 0);
+			player.getResources().add(temp);
+			newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
+			newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
+			newCouldCity = player.game.couldBuildCity(player.playerNumber);
+
+			if(!origCouldSettlement && newCouldSettlement){
+				SOCPossibleSettlement settlementWood = getBestSettlement(player);
+				settlementEvalWood = settlementEvalFunction(settlementWood.getCoordinates(), player);
+			}
+			if(!origCouldRoad && newCouldRoad){
+				SOCPossibleRoad roadWood = getBestRoad(player);
+				roadEvalWood = roadEvalFunction(roadWood.getCoordinates(), player);
+			}
+			if (!origCouldCity && newCouldCity) {
+				SOCPossibleCity cityWood = getBestCity(player);
+				cityEvalWood = cityEvalFunction(cityWood.getCoordinates(), player);
+			}
+			player.getResources().subtract(temp);
+			bestWood = Math.max(settlementEvalWood, Math.max(roadEvalWood, cityEvalWood));
+
+			monoEval = Math.max(bestClay, Math.max(bestOre, Math.max(bestSheep, Math.max(bestWheat, bestWood))));
+			try {
+				SOCDBHelper.devNormalization("MONO", monoEval);
+			}
+			catch (Exception e){
+				 System.err.println("Error updating on MONO:" + e);
+			}
+			return monoEval;
+		}
+		else if (card.equals("KNIGHT")){
+			int origKnights = player.getNumKnights();
+			player.incrementNumKnights();
+			updateState(player);
+			if (relativeKnightsPlayed <= -1){
+				knightEval = .25;
+			}
+			if (relativeKnightsPlayed == 0){
+				knightEval = .35;
+			}
+			if (relativeKnightsPlayed == 1){
+				knightEval = .50;
+			}
+			if (relativeKnightsPlayed > 1){
+				knightEval = .35;
+			}
+			player.setNumKnights(origKnights);
+			updateState(player);
+			try {
+				SOCDBHelper.devNormalization("KNIGHT", knightEval);
+			}
+			catch (Exception e){
+				 System.err.println("Error updating on KNIGHT:" + e);
+			}
+			return knightEval;
+		}
+		else {
+			return 0;
+		}
 	}
 
 	public SOCPossibleSettlement getBestSettlement(SOCPlayer player){
@@ -555,6 +847,14 @@ public class SOCPlayerState {
 		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
 		for(Integer settlement : settlements) {
 			newEval = settlementEvalFunction(settlement, player);
+			DecimalFormat df = new DecimalFormat("#.#####");
+			newEval = Double.valueOf(df.format(newEval));
+			// try {
+			// 	SOCDBHelper.settlementNormalization(newEval);
+			// }
+			// catch (Exception e){
+			// 	 System.err.println("Error updating on settlement:" + e);
+			// }
 			if(newEval > currentEval) {
 					currentEval = newEval;
 					bestSettlement = new SOCPossibleSettlement(player, settlement, null);
@@ -571,6 +871,14 @@ public class SOCPlayerState {
 		for(SOCSettlement set : cities) {
 			city = set.getCoordinates();
 			newEval = cityEvalFunction(city, player);
+			DecimalFormat df = new DecimalFormat("#.#####");
+			newEval = Double.valueOf(df.format(newEval));
+			// try {
+			// 	SOCDBHelper.cityNormalization(newEval);
+			// }
+			// catch (Exception e){
+			// 	 System.err.println("Error updating on settlement:" + e);
+			// }
 			if (newEval > currentEval){
 				currentEval =  newEval;
 				bestCity = new SOCPossibleCity(player, city);
@@ -585,12 +893,102 @@ public class SOCPlayerState {
 		HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
 		for(Integer road : roads) {
 			newEval  = roadEvalFunction(road, player);
+			DecimalFormat df = new DecimalFormat("#.#####");
+			newEval = Double.valueOf(df.format(newEval));
+			// try {
+			// 	SOCDBHelper.roadNormalization(newEval);
+			// }
+			// catch (Exception e){
+			// 	 System.err.println("Error updating on settlement:" + e);
+			// }
 			if(newEval > currentEval){
 				currentEval = newEval;
 				bestRoad = new SOCPossibleRoad(player, road, null);
 			}
 		}
 		return bestRoad;
+	}
+
+	public String getBestDevCard(SOCPlayer player){
+		double roadBuildingEval = -1;
+		double discEval = -1;
+		double monoEval = -1;
+		double knightEval = -1;
+		String card = "nothing";
+
+		//road builder
+		if (player.getInventory().hasPlayable(SOCDevCardConstants.ROADS) && player.game.canPlayRoadBuilding(player.playerNumber) &&
+									!player.hasPlayedDevCard() && player.getNumPieces(SOCPlayingPiece.ROAD) >= 2) {
+			roadBuildingEval = devCardEvalFunction("RB", player);
+		}
+		//YOP
+		else if (player.getInventory().hasPlayable(SOCDevCardConstants.DISC) && player.game.canPlayDiscovery(player.playerNumber) && !player.hasPlayedDevCard()) {
+			discEval = devCardEvalFunction("DISC", player);
+		}
+		//monopoly
+		else if (player.getInventory().hasPlayable(SOCDevCardConstants.MONO) && player.game.canPlayMonopoly(player.playerNumber) && !player.hasPlayedDevCard()) {
+			monoEval = devCardEvalFunction("MONO", player);
+		}
+		//knight
+		else if (player.getInventory().hasPlayable(SOCDevCardConstants.KNIGHT) && player.game.canPlayKnight(player.playerNumber) && !player.hasPlayedDevCard()) {
+			knightEval = devCardEvalFunction("KNIGHT", player);
+		}
+
+		double bestCard = Math.max(roadBuildingEval, Math.max(discEval, Math.max(monoEval, knightEval)));
+		if (bestCard != -1){
+			if (bestCard == roadBuildingEval) card = "RB";
+			else if (bestCard == discEval) card = "DISC";
+			else if (bestCard == monoEval) card = "MONO";
+			else card = "KNIGHT";
+		}
+		return card;
+	}
+
+
+	public double[] getAction(SOCPlayer player){
+		double[] predictionArray = new double[6];
+		double weightOne = 1;
+		double weightTwo = 1;
+		double weightThree = 1;
+		double weightFour = 1;
+		double weightFive = 1;
+		double settlementEval = 0;
+		double cityEval = 0;
+		double roadEval = 0;
+		double devCardEval = 0;
+		double endTurn = -1;
+
+
+		if (player.game.couldBuildSettlement(player.playerNumber)){
+				SOCPossibleSettlement settlement = getBestSettlement(player);
+				settlementEval = weightOne * (settlementEvalFunction(settlement.getCoordinates(), player));
+		}
+
+		if (player.game.couldBuildCity(player.playerNumber)){
+				SOCPossibleCity city = getBestCity(player);
+				cityEval = weightTwo * (cityEvalFunction(city.getCoordinates(), player));
+		}
+
+		if (player.game.couldBuildRoad(player.playerNumber)){
+			SOCPossibleRoad road = getBestRoad(player);
+			roadEval = weightThree * (roadEvalFunction(road.getCoordinates(), player));
+		}
+
+		String devCard = getBestDevCard(player);
+		// devCardEval = weightFour * (devCardEvalFunction(devCard, player));
+		devCardEval = 100;
+
+		double buyDevCard = .01;
+
+		predictionArray[0] = settlementEval;
+		predictionArray[1] = cityEval;
+		predictionArray[2] = roadEval;
+		predictionArray[3] = devCardEval;
+		predictionArray[4] = buyDevCard;
+		predictionArray[5] = endTurn;
+
+		return predictionArray;
+
 	}
 
 
