@@ -58,7 +58,7 @@ public class New3PBrain extends SOCRobotBrain
 
     public New3PBrain(New3PBrain brain) {
     	this(brain.client, brain.robotParameters, brain.game, brain.gameEventQ);
-        this.state = new SOCPlayerState(brain.state,brain.game);
+        this.state = new SOCPlayerState(brain.state);
         setOurPlayerData();
     }
 

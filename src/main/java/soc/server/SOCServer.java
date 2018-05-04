@@ -7092,7 +7092,7 @@ public class SOCServer extends Server
               String firstTwo = name.substring(0,2);
               if (firstTwo.equals("mf")){
                 int victoryPoints = p.getTotalVP();
-                  SOCDBHelper.saveVP(victoryPoints, ga.getName());
+                  SOCDBHelper.saveVP(victoryPoints, ga.getName(), name);
               }
             }
         }
