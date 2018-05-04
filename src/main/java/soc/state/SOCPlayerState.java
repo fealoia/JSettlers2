@@ -35,13 +35,13 @@ import soc.game.SOCPlayingPiece;
 
 public class SOCPlayerState {
 
-	Random random = new Random();
+	static Random random = new Random();
 
-	final double weightOne = random.nextDouble();
-  final double weightTwo = (1-weightOne) * random.nextDouble();
-  final double weightThree = (1 - (weightOne + weightTwo)) * random.nextDouble();
-  final double weightFour = (1 - (weightOne + weightTwo + weightThree)) * random.nextDouble();
-  final double weightFive = 1 - weightFour - weightThree - weightTwo - weightOne;
+	final static double weightOne = random.nextDouble();
+  final static double weightTwo = (1-weightOne) * random.nextDouble();
+  final static double weightThree = (1 - (weightOne + weightTwo)) * random.nextDouble();
+  final static double weightFour = (1 - (weightOne + weightTwo + weightThree)) * random.nextDouble();
+  final static double weightFive = 1 - weightFour - weightThree - weightTwo - weightOne;
 
 	//State representation variables
 	protected int relativeLongestRoadLength;
@@ -142,6 +142,11 @@ public class SOCPlayerState {
 
 
 	public void updateState(SOCPlayer player) {
+		if (z == 0){
+			saveWeights(player);
+			++z;
+		}
+		// System.out.println("WEIGHTS: " + weightOne + ", " + weightTwo + ", " + weightThree + ", " + weightFour + ", " + weightFive);
 		SOCPlayer[] players = player.game.getPlayers();
 		int oppLR = 0;
 		int oppLA = 0;
@@ -1259,7 +1264,6 @@ public class SOCPlayerState {
 
 	public double[] getAction(SOCPlayer player){
 		double[] predictionArray = new double[6];
-
 		double settlementEval = 0;
 		double cityEval = 0;
 		double roadEval = 0;
@@ -1414,7 +1418,7 @@ public class SOCPlayerState {
 		return rel.toString();
 	}
 
-	public void saveState(){
+	public void saveWeights(SOCPlayer player){
 				try {
 					SOCDBHelper.saveWeights(getWeights(), player);
 				}
