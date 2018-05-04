@@ -189,6 +189,11 @@ public class SOCPlayerState {
         }
 
 	public void updateState(SOCPlayer player) {
+		if (z == 0){
+			saveWeights(player);
+			++z;
+		}
+		// System.out.println("WEIGHTS: " + weightOne + ", " + weightTwo + ", " + weightThree + ", " + weightFour + ", " + weightFive);
 		SOCPlayer[] players = player.game.getPlayers();
 		int oppLR = 0;
 		int oppLA = 0;
@@ -1306,7 +1311,6 @@ public class SOCPlayerState {
 
 	public double[] getAction(SOCPlayer player){
 		double[] predictionArray = new double[6];
-
 		double settlementEval = 0;
 		double cityEval = 0;
 		double roadEval = 0;
@@ -1474,7 +1478,7 @@ public class SOCPlayerState {
 		return rel.toString();
 	}
 
-	public void saveState(){
+	public void saveWeights(SOCPlayer player){
 				try {
 				//	SOCDBHelper.saveWeights(getWeights(false), player);
 				}
