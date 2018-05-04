@@ -35,13 +35,21 @@ import soc.game.SOCPlayingPiece;
 
 public class SOCPlayerState {
 
-	Random random = new Random();
+	static Random random = new Random();
 
-	final double weightOne = random.nextDouble();
-  final double weightTwo = (1-weightOne) * random.nextDouble();
-  final double weightThree = (1 - (weightOne + weightTwo)) * random.nextDouble();
-  final double weightFour = (1 - (weightOne + weightTwo + weightThree)) * random.nextDouble();
-  final double weightFive = 1 - weightFour - weightThree - weightTwo - weightOne;
+        static String mfOne;
+	static double mfOne_weightOne;
+        static double mfOne_weightTwo;
+        static double mfOne_weightThree;
+        static double mfOne_weightFour;
+        static double mfOne_weightFive;
+
+        static String mfTwo;
+        static double mfTwo_weightOne;
+        static double mfTwo_weightTwo;
+        static double mfTwo_weightThree;
+        static double mfTwo_weightFour;
+        static double mfTwo_weightFive;
 
 	//State representation variables
 	protected int relativeLongestRoadLength;
@@ -93,6 +101,8 @@ public class SOCPlayerState {
 
 	//Helper variables
 	private SOCBoard board;
+	private SOCGame boardGame;
+	private static String currentGameName;
 	private SOCBuildingSpeedEstimate estimate;
 	private double boardClay;
 	private double boardOre;
@@ -108,7 +118,7 @@ public class SOCPlayerState {
 
 
 
-	public SOCPlayerState(SOCBoard board) {
+	public SOCPlayerState(SOCBoard board, SOCGame game) {
 		this.relativeLongestRoadLength = -5;
 		this.relativeKnightsPlayed = -3;
 		this.opponentRoadsAway = Integer.MAX_VALUE;
@@ -132,14 +142,51 @@ public class SOCPlayerState {
 		boardSheep = (1.0 / boardResources[3]) * 3;
 		boardWheat = (1.0 / boardResources[4]) * 3;
 		boardWood = (1.0 / boardResources[5]) * 3;
-
-
-	}
+	     
+		this.boardGame = game;
+        }
 
 	public SOCPlayerState(SOCPlayerState state) {
-		this(state.board);
+		this(state.board, state.boardGame);
 	}
 
+        public static void updateWeights(SOCGame game) {
+             if(currentGameName == game.getName()) return;
+             currentGameName = game.getName();
+        
+	     mfOne_weightOne = random.nextDouble();
+             mfOne_weightTwo = (1-mfOne_weightOne) * random.nextDouble();
+             mfOne_weightThree = (1 - (mfOne_weightOne + mfOne_weightTwo)) * random.nextDouble();
+             mfOne_weightFour = (1 - (mfOne_weightOne + mfOne_weightTwo + mfOne_weightThree)) * random.nextDouble();
+             mfOne_weightFive = 1 - mfOne_weightFour - mfOne_weightThree - mfOne_weightTwo - mfOne_weightOne;
+	     
+             mfTwo_weightOne = random.nextDouble();
+             mfTwo_weightTwo = (1-mfTwo_weightOne) * random.nextDouble();
+             mfTwo_weightThree = (1 - (mfTwo_weightOne + mfTwo_weightTwo)) * random.nextDouble();
+             mfTwo_weightFour = (1 - (mfTwo_weightOne + mfTwo_weightTwo + mfTwo_weightThree)) * random.nextDouble();
+             mfTwo_weightFive = 1 - mfTwo_weightFour - mfTwo_weightThree - mfTwo_weightTwo - mfTwo_weightOne;
+	
+             SOCPlayer[] players = game.getPlayers();
+             boolean first = false;
+
+             
+             for(SOCPlayer player: players) {
+                 if(player.getName().indexOf("mf") > -1) {
+                    if(first == false) {
+                        mfOne = player.getName();
+                    } else {
+                        mfTwo = player.getName();
+                    }
+
+                    try {
+                        SOCDBHelper.saveWeights(getWeights(first), player);
+                    } catch (Exception e){
+                        System.err.println("Error saving weights:" + e);
+                    }
+                    first = true;
+                 } 
+             }             
+        }
 
 	public void updateState(SOCPlayer player) {
 		SOCPlayer[] players = player.game.getPlayers();
@@ -1266,29 +1313,34 @@ public class SOCPlayerState {
 		double devCardEval = 0;
 		double endTurn = -100;
 
+                Boolean pOne = mfOne == player.getName();
 
 		if (player.game.couldBuildSettlement(player.playerNumber)){
 				SOCPossibleSettlement settlement = getBestSettlement(player);
-				settlementEval = weightOne * (settlementEvalFunction(settlement.getCoordinates(), player));
+				settlementEval = (pOne ? mfOne_weightOne : mfTwo_weightOne) *
+                                        (settlementEvalFunction(settlement.getCoordinates(), player));
 		}
 
 		if (player.game.couldBuildCity(player.playerNumber)){
 				SOCPossibleCity city = getBestCity(player);
-				cityEval = weightTwo * (cityEvalFunction(city.getCoordinates(), player));
+				cityEval = (pOne ? mfOne_weightTwo : mfTwo_weightTwo) * 
+                                        (cityEvalFunction(city.getCoordinates(), player));
 		}
 
 		if (player.game.couldBuildRoad(player.playerNumber)){
 			SOCPossibleRoad road = getBestRoad(player);
-			roadEval = weightThree * (roadEvalFunction(road.getCoordinates(), player));
+			roadEval = (pOne ? mfOne_weightThree : mfTwo_weightThree) * 
+                            (roadEvalFunction(road.getCoordinates(), player));
 		}
 
 		String devCard = getBestDevCard(player);
 		if(!devCard.equals("nothing")){
-			devCardEval = weightFour * (devCardEvalFunction(devCard, player));
+			devCardEval = (pOne ? mfOne_weightFour : mfTwo_weightFour) * 
+                            (devCardEvalFunction(devCard, player));
 		}
 
 		//.179340 is the calculated value of buy dev card
-		double buyDevCard = weightFive * .04;
+		double buyDevCard = (pOne ? mfOne_weightFive : mfTwo_weightFive) * .04;
 
 		predictionArray[0] = settlementEval;
 		predictionArray[1] = cityEval;
@@ -1395,13 +1447,21 @@ public class SOCPlayerState {
 
 	}
 
-	public String getWeights(){
+	public static String getWeights(Boolean first){
 		StringBuilder rel = new StringBuilder();
-		rel.append("\'" + weightOne + "\',");
-		rel.append("\'" + weightTwo + "\',");
-		rel.append("\'" + weightThree + "\',");
-		rel.append("\'" + weightFour + "\',");
-		rel.append("\'" + weightFive + "\',");
+                if (first == false) {
+                    rel.append("\'" + mfOne_weightOne + "\',");
+                    rel.append("\'" + mfOne_weightTwo + "\',");
+                    rel.append("\'" + mfOne_weightThree + "\',");
+                    rel.append("\'" + mfOne_weightFour + "\',");
+                    rel.append("\'" + mfOne_weightFive + "\',");
+                } else {
+                    rel.append("\'" + mfTwo_weightOne + "\',");
+                    rel.append("\'" + mfTwo_weightTwo + "\',");
+                    rel.append("\'" + mfTwo_weightThree + "\',");
+                    rel.append("\'" + mfTwo_weightFour + "\',");
+                    rel.append("\'" + mfTwo_weightFive + "\',");
+                }
 		return rel.toString();
 	}
 
@@ -1416,13 +1476,12 @@ public class SOCPlayerState {
 
 	public void saveState(){
 				try {
-					SOCDBHelper.saveWeights(getWeights(), player);
+				//	SOCDBHelper.saveWeights(getWeights(false), player);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on settlement:" + e);
 				}
 	}
-
 
 	public String toString() {
 		return "{" + victoryPoints + ", " + relativeLongestRoadLength + ", " + relativeKnightsPlayed + ", " + opponentRoadsAway + ", [" +

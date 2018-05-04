@@ -1837,8 +1837,8 @@ public class SOCDBHelper
     }
 
     public static void saveWeights(String weights, SOCPlayer player) throws SQLException{
-      if (testOne_doesTableExist("saveWeights", true, false) == false) {
-        String sql = "CREATE TABLE saveWeights(weightOne DOUBLE, weightTwo DOUBLE, weightThree DOUBLE,"
+      if (testOne_doesTableExist("weights", true, false) == false) {
+        String sql = "CREATE TABLE weights(playerName TEXT, weightOne DOUBLE, weightTwo DOUBLE, weightThree DOUBLE,"
                         + "weightFour DOUBLE, weightFive DOUBLE, game TEXT);";
         try{
           runDDL(sql);
@@ -1849,7 +1849,8 @@ public class SOCDBHelper
       }
 
       StringBuilder sql = new StringBuilder();
-      sql.append("INSERT into saveWeights VALUES(");
+      sql.append("INSERT into weights VALUES(");
+      sql.append("\'" + player.getName() + "\',");
       sql.append(weights);
       sql.append("\'" + player.game.getName() + "\'");
       sql.append(")");

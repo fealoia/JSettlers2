@@ -1111,7 +1111,7 @@ public class SOCRobotBrain extends Thread
         if (pinger != null)
         {
             pinger.start();
-            state = new SOCPlayerState(game.getBoard());
+            state = new SOCPlayerState(game.getBoard(),game);
 
             //
             // Along with actual game events, the pinger sends a TIMINGPING message
@@ -2499,6 +2499,7 @@ public class SOCRobotBrain extends Thread
         case SOCGame.START1A:
             {
                 expectSTART1A = false;
+                if (ourPlayerData.getPlayerNumber() == 0) SOCPlayerState.updateWeights(ourPlayerData.getGame());
 
                 if ((! waitingForOurTurn) && ourTurn && (! (expectPUTPIECE_FROM_START1A && (counter < 4000))))
                 {
