@@ -1810,6 +1810,59 @@ public class SOCDBHelper
         return false;
     }
 
+    public static void saveVP(int victoryPoints, String game) throws SQLException{
+      if (testOne_doesTableExist("saveVP", true, false) == false) {
+        String sql = "CREATE TABLE saveVP(FinalVPs INT, game TEXT);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into saveVP VALUES(");
+      sql.append("\'" + victoryPoints + "\',");
+      sql.append("\'" + game + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
+    public static void saveWeights(String weights, SOCPlayer player) throws SQLException{
+      if (testOne_doesTableExist("saveWeights", true, false) == false) {
+        String sql = "CREATE TABLE saveWeights(weightOne DOUBLE, weightTwo DOUBLE, weightThree DOUBLE,"
+                        + "weightFour DOUBLE, weightFive DOUBLE, game TEXT);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into saveWeights VALUES(");
+      sql.append(weights);
+      sql.append("\'" + player.game.getName() + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
     public static void savePlacement(final SOCPlayer pl, final String type, final int coordinate) throws SQLException {
     	if (testOne_doesTableExist("allPlacements", true, false) == false) {
             String sql = "CREATE TABLE allPlacements(" +

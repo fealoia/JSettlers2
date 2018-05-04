@@ -3,6 +3,7 @@ package soc.state;
 import java.util.Vector;
 import java.util.HashSet;
 import java.text.DecimalFormat;
+import java.util.Random;
 
 import soc.game.SOCBoard;
 import soc.game.SOCPlayer;
@@ -33,6 +34,15 @@ import soc.game.SOCPlayingPiece;
 
 
 public class SOCPlayerState {
+
+	Random random = new Random();
+
+	final double weightOne = random.nextDouble();
+  final double weightTwo = (1-weightOne) * random.nextDouble();
+  final double weightThree = (1 - (weightOne + weightTwo)) * random.nextDouble();
+  final double weightFour = (1 - (weightOne + weightTwo + weightThree)) * random.nextDouble();
+  final double weightFive = 1 - weightFour - weightThree - weightTwo - weightOne;
+
 	//State representation variables
 	protected int relativeLongestRoadLength;
 	protected int relativeKnightsPlayed;
@@ -70,10 +80,16 @@ public class SOCPlayerState {
 	protected boolean portMisc;
 	protected double[] relativeResources = new double[5];
 	protected int[] hasPort = new int[7];
-	protected double settlementNormalizer = 22;
-	protected double cityNormalizer =  22;
-	protected double roadNormalizer = 12;
+	protected double settlementMin = 3;
+	protected double settlementMax = 13343.463369963369;
+	protected double cityMin =  3;
+	protected double cityMax =  15440.944444444445;
+	protected double roadMin = 0;
+	protected double roadMax =  608.3699132852703;
 	protected double devCardNormalizer = 1;
+	protected int z = 0;
+
+
 
 	//Helper variables
 	private SOCBoard board;
@@ -88,6 +104,7 @@ public class SOCPlayerState {
 	private SOCPossibleSettlement bestSettlement;
 	private SOCPossibleRoad bestRoad;
 	private SOCPossibleCity bestCity;
+
 
 
 
@@ -115,6 +132,8 @@ public class SOCPlayerState {
 		boardSheep = (1.0 / boardResources[3]) * 3;
 		boardWheat = (1.0 / boardResources[4]) * 3;
 		boardWood = (1.0 / boardResources[5]) * 3;
+
+
 	}
 
 	public SOCPlayerState(SOCPlayerState state) {
@@ -431,13 +450,13 @@ public class SOCPlayerState {
 		player.game.undoPutTempPiece(temp);
 		updateState(player);
 		eval = resourcesGained + opponentImpact + relativeResourceGain;
-		try {
-			SOCDBHelper.settlementNormalization(eval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on settlement:" + e);
-		}
-		return eval/settlementNormalizer;
+		// try {
+		// 	SOCDBHelper.settlementNormalization(eval);
+		// }
+		// catch (Exception e){
+		// 	 System.err.println("Error updating on settlement:" + e);
+		// }
+		return (eval - settlementMin)/(settlementMax - settlementMin);
 	}
 
 	public double cityEvalFunction(Integer city, SOCPlayer player){
@@ -516,13 +535,13 @@ public class SOCPlayerState {
 		updateState(player);
 
 		eval = resourcesGained + relativeResourceGain;
-		try {
-			SOCDBHelper.cityNormalization(eval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on settlement:" + e);
-		}
-		return eval/cityNormalizer;
+		// try {
+		// 	SOCDBHelper.cityNormalization(eval);
+		// }
+		// catch (Exception e){
+		// 	 System.err.println("Error updating on settlement:" + e);
+		// }
+		return (eval - cityMin)/(cityMax-cityMin);
 	}
 
 
@@ -570,13 +589,13 @@ public class SOCPlayerState {
 		double changeInLongestRoadEval = newLongestRoadEval - currentLongestRoadEval;
 
 		eval = changeInSettlementEval + opponentImpact +  changeInLongestRoadEval;
-		try {
-			SOCDBHelper.roadNormalization(eval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on road:" + e);
-		}
-		return eval/roadNormalizer;
+		// try {
+		// 	SOCDBHelper.roadNormalization(eval);
+		// }
+		// catch (Exception e){
+		// 	 System.err.println("Error updating on road:" + e);
+		// }
+		return (eval - roadMin)/(roadMax-roadMin);
 	}
 
 	public double temp(SOCPlayer player){
@@ -1240,11 +1259,6 @@ public class SOCPlayerState {
 
 	public double[] getAction(SOCPlayer player){
 		double[] predictionArray = new double[6];
-		double weightOne = 1;
-		double weightTwo = 1;
-		double weightThree = 1;
-		double weightFour = 1;
-		double weightFive = 1;
 
 		double settlementEval = 0;
 		double cityEval = 0;
@@ -1274,7 +1288,7 @@ public class SOCPlayerState {
 		}
 
 		//.179340 is the calculated value of buy dev card
-		double buyDevCard = weightFive * -1000;
+		double buyDevCard = weightFive * .04;
 
 		predictionArray[0] = settlementEval;
 		predictionArray[1] = cityEval;
@@ -1381,6 +1395,16 @@ public class SOCPlayerState {
 
 	}
 
+	public String getWeights(){
+		StringBuilder rel = new StringBuilder();
+		rel.append("\'" + weightOne + "\',");
+		rel.append("\'" + weightTwo + "\',");
+		rel.append("\'" + weightThree + "\',");
+		rel.append("\'" + weightFour + "\',");
+		rel.append("\'" + weightFive + "\',");
+		return rel.toString();
+	}
+
 	public String stateToString(Vector stateVector){
 		stateVector.toString();
 		StringBuilder rel = new StringBuilder();
@@ -1388,6 +1412,15 @@ public class SOCPlayerState {
 			rel.append("\'" + element + "\',");
 		}
 		return rel.toString();
+	}
+
+	public void saveState(){
+				try {
+					SOCDBHelper.saveWeights(getWeights(), player);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on settlement:" + e);
+				}
 	}
 
 

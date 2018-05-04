@@ -7087,6 +7087,14 @@ public class SOCServer extends Server
         {
             final int gameSeconds = (int) (((System.currentTimeMillis() - ga.getStartTime().getTime())+500L) / 1000L);
             SOCDBHelper.saveGameScores(ga, gameSeconds);
+            for (SOCPlayer p : ga.getPlayers()){
+              String name = p.getName();
+              String firstTwo = name.substring(0,2);
+              if (firstTwo.equals("mf")){
+                int victoryPoints = p.getTotalVP();
+                  SOCDBHelper.saveVP(victoryPoints, ga.getName());
+              }
+            }
         }
         catch (Exception e)
         {

@@ -2052,11 +2052,11 @@ public class SOCRobotBrain extends Thread
         //D.ebugPrintln("STOPPING AND DEALLOCATING");
         gameEventQ = null;
 
-        try {
-                SOCDBHelper.saveInitialSettlements(ourPlayerData);
-        } catch (Exception e){
-        	System.err.println("Error saving initial settlements: " + e);
-        }
+        // try {
+        //         SOCDBHelper.saveInitialSettlements(ourPlayerData);
+        // } catch (Exception e){
+        // 	System.err.println("Error saving initial settlements: " + e);
+        // }
         client.addCleanKill();
         client = null;
 
@@ -2360,12 +2360,12 @@ public class SOCRobotBrain extends Thread
                         ourPlayerData.thirdSettlementCoord = whatWeWantToBuild.getCoordinates();
                         hasPlacedThirdSettlement = true;
                     }
-                    try {
-                        SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", whatWeWantToBuild.getCoordinates());
-                    } catch(Exception e) {
-        	        System.err.println("Error saving placement: " + e);
-                        e.printStackTrace();
-                    }
+                  //   try {
+                  //       SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", whatWeWantToBuild.getCoordinates());
+                  //   } catch(Exception e) {
+        	        // System.err.println("Error saving placement: " + e);
+                  //       e.printStackTrace();
+                  //   }
 
                     //D.ebugPrintln("!!! PUTTING PIECE "+whatWeWantToBuild+" !!!");
                     pause(500);
@@ -2374,12 +2374,12 @@ public class SOCRobotBrain extends Thread
                     state.updateState(this.ourPlayerData);
                     eval = state.stateEvalFunction();
                     //System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
-                    try {
-                      SOCDBHelper.saveState(ourPlayerData, state, "BUILT SETTLEMENT");
-                    }
-                    catch (Exception e){
-	                     System.err.println("Error updating on settlement:" + e);
-                    }
+                    // try {
+                    //   SOCDBHelper.saveState(ourPlayerData, state, "BUILT SETTLEMENT");
+                    // }
+                    // catch (Exception e){
+	                  //    System.err.println("Error updating on settlement:" + e);
+                    // }
                 }
             }
             break;
@@ -2398,12 +2398,12 @@ public class SOCRobotBrain extends Thread
                     state.updateState(this.ourPlayerData);
                     eval = state.stateEvalFunction();
                     //System.out.println(ourPlayerName + " ROAD " + state + eval);
-                    try {
-                      SOCDBHelper.saveState(ourPlayerData, state, "BUILT ROAD");
-                    }
-                    catch (Exception e){
-	                     System.err.println("Error updating on road:" + e);
-                    }
+                    // try {
+                    //   SOCDBHelper.saveState(ourPlayerData, state, "BUILT ROAD");
+                    // }
+                    // catch (Exception e){
+	                  //    System.err.println("Error updating on road:" + e);
+                    // }
             }
 
             break;
@@ -2419,12 +2419,12 @@ public class SOCRobotBrain extends Thread
                     expectPLAY1 = true;
                     ourPlayerData.numCities++;
 
-                    try {
-                        SOCDBHelper.savePlacement(ourPlayerData, "CITY", whatWeWantToBuild.getCoordinates());
-                    } catch(Exception e) {
-        	        System.err.println("Error saving placement: " + e);
-                        e.printStackTrace();
-                    }
+                  //   try {
+                  //       SOCDBHelper.savePlacement(ourPlayerData, "CITY", whatWeWantToBuild.getCoordinates());
+                  //   } catch(Exception e) {
+        	        // System.err.println("Error saving placement: " + e);
+                  //       e.printStackTrace();
+                  //   }
 
                     pause(500);
                     client.putPiece(game, whatWeWantToBuild);
@@ -2433,12 +2433,12 @@ public class SOCRobotBrain extends Thread
                     state.updateState(this.ourPlayerData);
                     eval = state.stateEvalFunction();
                     //System.out.println(ourPlayerName + " city " + state + eval);
-                    try {
-                      SOCDBHelper.saveState(ourPlayerData, state, "BUILT CITY");
-                    }
-                    catch (Exception e){
-	                     System.err.println("Error updating on city:" + e);
-                    }
+                    // try {
+                    //   SOCDBHelper.saveState(ourPlayerData, state, "BUILT CITY");
+                    // }
+                    // catch (Exception e){
+	                  //    System.err.println("Error updating on city:" + e);
+                    // }
                 }
             }
             break;
@@ -2508,12 +2508,12 @@ public class SOCRobotBrain extends Thread
                     final int firstSettleNode = openingBuildStrategy.planInitialSettlements();
                     ourPlayerData.numSettlements++;
 
-                    try {
-                        SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", firstSettleNode);
-                    } catch(Exception e) {
-        	        System.err.println("Error saving placement: " + e);
-                        e.printStackTrace();
-                    }
+                  //   try {
+                  //       SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", firstSettleNode);
+                  //   } catch(Exception e) {
+        	        // System.err.println("Error saving placement: " + e);
+                  //       e.printStackTrace();
+                  //   }
                     placeFirstSettlement(firstSettleNode);
 
                 }
@@ -2547,13 +2547,13 @@ public class SOCRobotBrain extends Thread
                     waitingForGameState = true;
                     final int secondSettleNode = openingBuildStrategy.planSecondSettlement();
                     ourPlayerData.numSettlements++;
-
-                    try {
-                        SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", secondSettleNode);
-                    } catch(Exception e) {
-        	        System.err.println("Error saving placement: " + e);
-                        e.printStackTrace();
-                    }
+                  //
+                  //   try {
+                  //       SOCDBHelper.savePlacement(ourPlayerData, "SETTLEMENT", secondSettleNode);
+                  //   } catch(Exception e) {
+        	        // System.err.println("Error saving placement: " + e);
+                  //       e.printStackTrace();
+                  //   }
                     placeInitSettlement(secondSettleNode);
                     //System.out.println(state);
                 }
@@ -2636,12 +2636,12 @@ public class SOCRobotBrain extends Thread
         state.updateState(this.ourPlayerData);
         eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " KNIGHT " + state + eval);
-        try {
-          SOCDBHelper.saveState(ourPlayerData, state, "PLAYED KNIGHT");
-        }
-        catch (Exception e){
-           System.err.println("Error updating on knight:" + e);
-        }
+        // try {
+        //   SOCDBHelper.saveState(ourPlayerData, state, "PLAYED KNIGHT");
+        // }
+        // catch (Exception e){
+        //    System.err.println("Error updating on knight:" + e);
+        // }
     }
 
     /**
@@ -2797,12 +2797,12 @@ public class SOCRobotBrain extends Thread
                         state.updateState(this.ourPlayerData);
                         eval = state.stateEvalFunction();
                         //System.out.println(ourPlayerName + " PLAY DEV (road builder) " + state + eval);
-                        try {
-                          SOCDBHelper.saveState(ourPlayerData, state, "PLAY ROAD BUILDER");
-                        }
-                        catch (Exception e){
-    	                     System.err.println("Error updating on playing road builder:" + e);
-                        }
+                        // try {
+                        //   SOCDBHelper.saveState(ourPlayerData, state, "PLAY ROAD BUILDER");
+                        // }
+                        // catch (Exception e){
+    	                  //    System.err.println("Error updating on playing road builder:" + e);
+                        // }
                     } else {
                         // We already tried to build this.
                         roadBuildingPlan = false;
@@ -2861,12 +2861,12 @@ public class SOCRobotBrain extends Thread
                 state.updateState(this.ourPlayerData);
                 eval = state.stateEvalFunction();
                 //System.out.println(ourPlayerName + " PLAY DEV (year of plenty)" + state + eval);
-                try {
-                  SOCDBHelper.saveState(ourPlayerData, state, "PLAY YEAR OF PLENTY");
-                }
-                catch (Exception e){
-                   System.err.println("Error updating on playing year of plenty:" + e);
-                }
+                // try {
+                //   SOCDBHelper.saveState(ourPlayerData, state, "PLAY YEAR OF PLENTY");
+                // }
+                // catch (Exception e){
+                //    System.err.println("Error updating on playing year of plenty:" + e);
+                // }
 
             }
         }
@@ -2894,12 +2894,12 @@ public class SOCRobotBrain extends Thread
                 state.updateState(this.ourPlayerData);
                 eval = state.stateEvalFunction();
                 //System.out.println(ourPlayerName + " PLAY DEV (monopoly)" + state + eval);
-                try {
-                  SOCDBHelper.saveState(ourPlayerData, state, "PLAY MONOPOLY");
-                }
-                catch (Exception e){
-                   System.err.println("Error updating on playing monopoly:" + e);
-                }
+                // try {
+                //   SOCDBHelper.saveState(ourPlayerData, state, "PLAY MONOPOLY");
+                // }
+                // catch (Exception e){
+                //    System.err.println("Error updating on playing monopoly:" + e);
+                // }
             }
 
             if (! expectWAITING_FOR_MONOPOLY)
@@ -3610,12 +3610,12 @@ public class SOCRobotBrain extends Thread
             eval = state.stateEvalFunction();
             //System.out.println(ourPlayerName + " BUY DEV " +state + eval);
             waitingForDevCard = true;
-            try {
-              SOCDBHelper.saveState(ourPlayerData, state, "BUY DEV CARD");
-            }
-            catch (Exception e){
-               System.err.println("Error updating on buying dev card:" + e);
-            }
+            // try {
+            //   SOCDBHelper.saveState(ourPlayerData, state, "BUY DEV CARD");
+            // }
+            // catch (Exception e){
+            //    System.err.println("Error updating on buying dev card:" + e);
+            // }
 
             break;
 
@@ -4633,12 +4633,12 @@ public class SOCRobotBrain extends Thread
         state.updateState(this.ourPlayerData);
         eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
-        try {
-          SOCDBHelper.saveState(ourPlayerData, state, "BUILT FIRST SETTLEMENT");
-        }
-        catch (Exception e){
-           System.err.println("Error updating on first settlement:" + e);
-        }
+        // try {
+        //   SOCDBHelper.saveState(ourPlayerData, state, "BUILT FIRST SETTLEMENT");
+        // }
+        // catch (Exception e){
+        //    System.err.println("Error updating on first settlement:" + e);
+        // }
     }
 
     /**
@@ -4671,12 +4671,12 @@ public class SOCRobotBrain extends Thread
         state.updateState(this.ourPlayerData);
         eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " SETTLEMENT " + state + eval);
-        try {
-          SOCDBHelper.saveState(ourPlayerData, state, "BUILT SECOND SETTLEMENT");
-        }
-        catch (Exception e){
-           System.err.println("Error updating on second settlement:" + e);
-        }
+        // try {
+        //   SOCDBHelper.saveState(ourPlayerData, state, "BUILT SECOND SETTLEMENT");
+        // }
+        // catch (Exception e){
+        //    System.err.println("Error updating on second settlement:" + e);
+        // }
     }
 
     /**
@@ -4708,12 +4708,12 @@ public class SOCRobotBrain extends Thread
         state.updateState(this.ourPlayerData);
         eval = state.stateEvalFunction();
         //System.out.println(ourPlayerName + " ROAD " + state + eval);
-        try {
-          SOCDBHelper.saveState(ourPlayerData, state, "BUILT INITIAL ROAD");
-        }
-        catch (Exception e){
-           System.err.println("Error updating on building road:" + e);
-        }
+        // try {
+        //   SOCDBHelper.saveState(ourPlayerData, state, "BUILT INITIAL ROAD");
+        // }
+        // catch (Exception e){
+        //    System.err.println("Error updating on building road:" + e);
+        // }
     }
 
     /**
