@@ -38,7 +38,7 @@ public class SOCPlayerState {
 	static Random random = new Random();
 
         static String mfOne;
-	static double mfOne_weightOne;
+				static double mfOne_weightOne;
         static double mfOne_weightTwo;
         static double mfOne_weightThree;
         static double mfOne_weightFour;
@@ -159,21 +159,22 @@ public class SOCPlayerState {
 		this(state.board, state.boardGame);
 	}
 
+
         public static void updateWeights(SOCGame game) {
              if(currentGameName == game.getName()) return;
              currentGameName = game.getName();
 
-	     mfOne_weightOne = random.nextDouble();
-             mfOne_weightTwo = (1-mfOne_weightOne) * random.nextDouble();
-             mfOne_weightThree = (1 - (mfOne_weightOne + mfOne_weightTwo)) * random.nextDouble();
-             mfOne_weightFour = (1 - (mfOne_weightOne + mfOne_weightTwo + mfOne_weightThree)) * random.nextDouble();
-             mfOne_weightFive = 1 - mfOne_weightFour - mfOne_weightThree - mfOne_weightTwo - mfOne_weightOne;
+	     			 mfOne_weightOne = 1.82156601;
+             mfOne_weightTwo = 1.6578789;
+             mfOne_weightThree = 2.6446166;
+             mfOne_weightFour = 1.00187589;
+             mfOne_weightFive = 0;
 
-             mfTwo_weightOne = random.nextDouble();
-             mfTwo_weightTwo = (1-mfTwo_weightOne) * random.nextDouble();
-             mfTwo_weightThree = (1 - (mfTwo_weightOne + mfTwo_weightTwo)) * random.nextDouble();
-             mfTwo_weightFour = (1 - (mfTwo_weightOne + mfTwo_weightTwo + mfTwo_weightThree)) * random.nextDouble();
-             mfTwo_weightFive = 1 - mfTwo_weightFour - mfTwo_weightThree - mfTwo_weightTwo - mfTwo_weightOne;
+             mfTwo_weightOne = .39465421;
+             mfTwo_weightTwo = 0.23147272;
+             mfTwo_weightThree = 1.2080302;
+             mfTwo_weightFour = -0.39594482;
+             mfTwo_weightFive = -1.43821231;
 
              SOCPlayer[] players = game.getPlayers();
              boolean first = false;
