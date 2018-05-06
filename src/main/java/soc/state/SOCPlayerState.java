@@ -111,7 +111,7 @@ public class SOCPlayerState {
 	//Helper variables
 	private SOCBoard board;
 	private SOCGame boardGame;
-	private static String currentGameName;
+	private static String currentGameName = "";
 	private SOCBuildingSpeedEstimate estimate;
 	private double boardClay;
 	private double boardOre;
@@ -161,20 +161,19 @@ public class SOCPlayerState {
 
 
         public static void updateWeights(SOCGame game) {
-             if(currentGameName == game.getName()) return;
+             if(game != null && currentGameName.equals(game.getName())) return;
              currentGameName = game.getName();
 
-	     			 mfOne_weightOne = 1.82156601;
-             mfOne_weightTwo = 1.6578789;
-             mfOne_weightThree = 2.6446166;
-             mfOne_weightFour = 1.00187589;
-             mfOne_weightFive = 0;
-
-             mfTwo_weightOne = .39465421;
-             mfTwo_weightTwo = 0.23147272;
-             mfTwo_weightThree = 1.2080302;
-             mfTwo_weightFour = -0.39594482;
-             mfTwo_weightFive = -1.43821231;
+              mfOne_weightOne = random.nextDouble();
+              mfOne_weightTwo = (1-mfOne_weightOne) * random.nextDouble();
+              mfOne_weightThree = (1 - (mfOne_weightOne + mfOne_weightTwo)) * random.nextDouble();
+              mfOne_weightFour = (1 - (mfOne_weightOne + mfOne_weightTwo + mfOne_weightThree)) * random.nextDouble();
+              mfOne_weightFive = 1 - mfOne_weightFour - mfOne_weightThree - mfOne_weightTwo - mfOne_weightOne;
+              mfTwo_weightOne = random.nextDouble();
+              mfTwo_weightTwo = (1-mfTwo_weightOne) * random.nextDouble();
+              mfTwo_weightThree = (1 - (mfTwo_weightOne + mfTwo_weightTwo)) * random.nextDouble();
+              mfTwo_weightFour = (1 - (mfTwo_weightOne + mfTwo_weightTwo + mfTwo_weightThree)) * random.nextDouble();
+              mfTwo_weightFive = 1 - mfTwo_weightFour - mfTwo_weightThree - mfTwo_weightTwo - mfTwo_weightOne;
 
              SOCPlayer[] players = game.getPlayers();
              boolean first = false;
@@ -203,7 +202,6 @@ public class SOCPlayerState {
 			saveWeights(player);
 			++z;
 		}
-		// System.out.println("WEIGHTS: " + weightOne + ", " + weightTwo + ", " + weightThree + ", " + weightFour + ", " + weightFive);
 		SOCPlayer[] players = player.game.getPlayers();
 		int oppLR = 0;
 		int oppLA = 0;
@@ -1327,12 +1325,14 @@ public class SOCPlayerState {
 		double devCardEval = 0;
 		double endTurn = -100;
 
-                Boolean pOne = mfOne == player.getName();
+                Boolean pOne = mfOne.equals(player.getName());
 
 		if (player.game.couldBuildSettlement(player.playerNumber)){
 				SOCPossibleSettlement settlement = getBestSettlement(player);
+                                Double test = settlementEvalFunction(settlement.getCoordinates(), player);
+                                System.out.println("SETTLEMENTEVAL: " + test);
 				settlementEval = (pOne ? mfOne_weightOne : mfTwo_weightOne) *
-                                        (settlementEvalFunction(settlement.getCoordinates(), player));
+                                        (test);
 		}
 
 		if (player.game.couldBuildCity(player.playerNumber)){
@@ -1342,9 +1342,11 @@ public class SOCPlayerState {
 		}
 
 		if (player.game.couldBuildRoad(player.playerNumber)){
+                    if(relativeLongestRoadLength < 2) {
 			SOCPossibleRoad road = getBestRoad(player);
 			roadEval = (pOne ? mfOne_weightThree : mfTwo_weightThree) *
                             (roadEvalFunction(road.getCoordinates(), player));
+                    }
 		}
 
 		String devCard = getBestDevCard(player);
@@ -1362,7 +1364,13 @@ public class SOCPlayerState {
 		predictionArray[3] = devCardEval;
 		predictionArray[4] = buyDevCard;
 		predictionArray[5] = endTurn;
+                if(pOne == true) {
+                System.out.println("Weights1: " + mfOne_weightOne + " " + mfOne_weightTwo + " " + mfOne_weightThree + " " + mfOne_weightFour + " " + mfOne_weightFive);
+                } else {
+                    System.out.println("Weights2: " + mfTwo_weightOne + " " + mfTwo_weightTwo + " " + mfTwo_weightThree + " " + mfTwo_weightFour + " " + mfTwo_weightFive);
+                }
 
+                System.out.println("YO: " + settlementEval + " " + cityEval + " " + roadEval + " " + devCardEval + " " + buyDevCard + " " + endTurn);
 		return predictionArray;
 
 	}
