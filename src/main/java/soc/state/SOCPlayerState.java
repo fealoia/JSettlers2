@@ -51,6 +51,12 @@ public class SOCPlayerState {
         static double mfTwo_weightFour;
         static double mfTwo_weightFive;
 
+	protected double weightOne = 0.050772343268348896;
+	protected double weightTwo = 0.7123877146799872;
+	protected double weightThree = 0.11188390127880482;
+	protected double weightFour = 0.10621878269792341;
+	protected double weightFive = 0.01873725807493576;
+
 	//State representation variables
 	protected int relativeLongestRoadLength;
 	protected int relativeKnightsPlayed;
@@ -99,12 +105,16 @@ public class SOCPlayerState {
 	protected double roadAVG = 8.341023771643231;
 	protected double rbMin = 0;
 	protected double rbMax =  50.78634807841725;
+	protected double rbAVG = 0.4998463258372125;
 	protected double monoMin = -1;
 	protected double monoMax =  701.8611111111112;
+	protected double monoAVG = 4.229742515837155;
 	protected double discMin = -1;
 	protected double discMax =  701.8611111111112;
+	protected double discAVG = 2.760197722323026;
 	protected double knightMin = .25;
 	protected double knightMax =  .5;
+	protected double knightAVG = 0.051815978841604354;
 
 	protected double devCardNormalizer = 1;
 	protected int z = 0;
@@ -163,43 +173,43 @@ public class SOCPlayerState {
 	}
 
 
-        public static void updateWeights(SOCGame game) {
-             if(game != null && currentGameName.equals(game.getName())) return;
-             currentGameName = game.getName();
-
-              mfOne_weightOne = 0.050772343268348896;
-              mfOne_weightTwo = 0.7123877146799872;
-              mfOne_weightThree = 0.11188390127880482;
-              mfOne_weightFour = 0.10621878269792341;
-              mfOne_weightFive = 0.01873725807493576;
-
-              mfTwo_weightOne = 0.6702873908683921
-              mfTwo_weightTwo = 0.1070463124263031;
-              mfTwo_weightThree = 0.0748336653733929;
-              mfTwo_weightFour = 0.011916578904321289;
-              mfTwo_weightFive = 0.13591605242759064;
-
-             SOCPlayer[] players = game.getPlayers();
-             boolean first = false;
-
-
-             for(SOCPlayer player: players) {
-                 if(player.getName().indexOf("mf") > -1) {
-                    if(first == false) {
-                        mfOne = player.getName();
-                    } else {
-                        mfTwo = player.getName();
-                    }
-
-                    try {
-                        SOCDBHelper.saveWeights(getWeights(first), player);
-                    } catch (Exception e){
-                        System.err.println("Error saving weights:" + e);
-                    }
-                    first = true;
-                 }
-             }
-        }
+  // public static void updateWeights(SOCGame game) {
+  //      if(game != null && currentGameName.equals(game.getName())) return;
+  //      currentGameName = game.getName();
+	//
+  //       mfOne_weightOne = 0.050772343268348896;
+  //       mfOne_weightTwo = 0.7123877146799872;
+  //       mfOne_weightThree = 0.11188390127880482;
+  //       mfOne_weightFour = 0.10621878269792341;
+  //       mfOne_weightFive = 0.01873725807493576;
+	//
+  //       mfTwo_weightOne = 0.6702873908683921;
+  //       mfTwo_weightTwo = 0.1070463124263031;
+  //       mfTwo_weightThree = 0.0748336653733929;
+  //       mfTwo_weightFour = 0.011916578904321289;
+  //       mfTwo_weightFive = 0.13591605242759064;
+	//
+  //      SOCPlayer[] players = game.getPlayers();
+  //      boolean first = false;
+	//
+	//
+  //      for(SOCPlayer player: players) {
+  //          if(player.getName().indexOf("mf") > -1) {
+  //             if(first == false) {
+  //                 mfOne = player.getName();
+  //             } else {
+  //                 mfTwo = player.getName();
+  //             }
+	//
+  //             try {
+  //                 SOCDBHelper.saveWeights(getWeights(), player);
+  //             } catch (Exception e){
+  //                 System.err.println("Error saving weights:" + e);
+  //             }
+  //             first = true;
+  //          }
+  //      }
+  // }
 
 	public void updateState(SOCPlayer player) {
 		if (z == 0){
@@ -268,106 +278,8 @@ public class SOCPlayerState {
 		woodPort = (portWood) ? 1 : 0;
 		hasPort[5] = woodPort;
 		hasPort[6] = 0;
-		//getting a value of possible settlement positions - 0 if no settlements can be built
-		nextBestSettlementValue = calculateNextSettlementValue(player);
-
-		//getting a value of possible settlement positions after placing an additional road
-		HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
-			for(Integer road : roads) {
-				SOCRoad temp = new SOCRoad(player, road, board);
-				player.getGame().putTempPiece(temp);
-				double newNextSettlementAndRoadValue = calculateNextSettlementValue(player);
-				if (newNextSettlementAndRoadValue > nextBestSettlementAndRoadValue){
-					nextBestSettlementAndRoadValue = newNextSettlementAndRoadValue;
-				}
-				player.getGame().undoPutTempPiece(temp);
-			}
-
-
-		//getting a value for possible cities
-		nextBestCityValue = calculateNextCityValue(player);
 
 	}
-
-	public double calculateNextCityValue(SOCPlayer player){
-		double bestCityValue = 0;
-
-		Vector<SOCSettlement> settlements = player.getSettlements();
-		for (SOCSettlement settlement : settlements)
-		{
-				int settlementNodeCoord = settlement.getCoordinates();
-				Vector<Integer> hexes = board.getAdjacentHexesToNode(settlementNodeCoord);
-				int y = 0;
-				for (Integer hex : hexes){
-					int x;
-					int hexType = board.getHexTypeFromCoord(hex);
-					int hexNumber = board.getNumberOnHexFromCoord(hex);
-					if (hexNumber == 8 || hexNumber == 6){
-						x = 5;
-					}
-					else if (hexNumber == 9 || hexNumber == 5){
-						x = 4;
-					}
-					else if (hexNumber == 10 || hexNumber == 4){
-						x = 3;
-					}
-					else if (hexNumber == 11 || hexNumber == 3){
-						x = 2;
-					}
-					else {
-						x = 1;
-					}
-					y = y + x;
-				}
-				double newCityValue = y/2.5;
-				if (newCityValue > bestCityValue) {
-					bestCityValue = newCityValue;
-				}
-		}
-		return bestCityValue;
-
-	}
-
-	public double calculateNextSettlementValue(SOCPlayer player){
-		double bestSettlementValue = 0;
-		Vector<SOCRoad> allroads = player.getRoads();
-		for(SOCRoad road : allroads){
-			int adjNodes[] = road.getAdjacentNodes();
-			for (int node : adjNodes){
-				if (player.canPlaceSettlement(node)){
-					Vector<Integer> hexes = board.getAdjacentHexesToNode(node);
-					int y = 0;
-					for (Integer hex : hexes){
-						int x;
-						int hexType = board.getHexTypeFromCoord(hex);
-						int hexNumber = board.getNumberOnHexFromCoord(hex);
-						if (hexNumber == 8 || hexNumber == 6){
-							x = 5;
-						}
-						else if (hexNumber == 9 || hexNumber == 5){
-							x = 4;
-						}
-						else if (hexNumber == 10 || hexNumber == 4){
-							x = 3;
-						}
-						else if (hexNumber == 11 || hexNumber == 3){
-							x = 2;
-						}
-						else {
-							x = 1;
-						}
-						y = y + x;
-					}
-					double newSettlementValue = y/2.5;
-					if (newSettlementValue > bestSettlementValue) {
-						bestSettlementValue = newSettlementValue;
-					}
-				}
-			}
-		}
-		return bestSettlementValue;
-	}
-
 
 	public double stateEvalFunction(){
 
@@ -665,293 +577,6 @@ public class SOCPlayerState {
 		return eval/roadAVG;
 	}
 
-	public double temp(SOCPlayer player){
-		Boolean origCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-		Boolean origCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-		Boolean origCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-		Boolean newCouldSettlement = false;
-		Boolean newCouldRoad = false;
-		Boolean newCouldCity = false;
-
-		double roadBuildingEval = -1;
-		double discEval = -1;
-		double monoEval = -1;
-		double knightEval = -1;
-
-		//RB
-		SOCPossibleRoad road1 = getBestRoad(player);
-		double evalRoadOne =  roadEvalFunction(road1.getCoordinates(), player);
-		SOCRoad temp1 = new SOCRoad(player, road1.getCoordinates(), player.game.getBoard());
-		player.game.putTempPiece(temp1);
-		updateState(player);
-		SOCPossibleRoad road2 = getBestRoad(player);
-		double evalRoadTwo = roadEvalFunction(road2.getCoordinates(), player);
-		player.game.undoPutTempPiece(temp1);
-		updateState(player);
-		roadBuildingEval = evalRoadOne + evalRoadTwo;
-		try {
-			SOCDBHelper.devNormalization("RB", roadBuildingEval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on RB:" + e);
-		}
-
-		//DISC
-		double bestEvalOne = -1;
-		double bestEvalTwo = -1;
-		double settlementEval = -1;
-		double cityEval = -1;
-		double roadEval = -1;
-
-		for(int i=0; i<5; i++) {
-			player.getResources().add(2, i);
-			updateState(player);
-
-			newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-			newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-			newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-			if(!origCouldSettlement && newCouldSettlement){
-				SOCPossibleSettlement settlement = getBestSettlement(player);
-				settlementEval = settlementEvalFunction(settlement.getCoordinates(), player);
-			}
-			if(!origCouldRoad && newCouldRoad){
-				SOCPossibleRoad road = getBestRoad(player);
-				roadEval = roadEvalFunction(road.getCoordinates(), player);
-			}
-			if (!origCouldCity && newCouldCity) {
-				SOCPossibleCity city = getBestCity(player);
-				cityEval = cityEvalFunction(city.getCoordinates(), player);
-			}
-
-			double maxOne = Math.max(settlementEval, Math.max(roadEval, cityEval));
-			if (maxOne > bestEvalOne){
-				bestEvalOne = maxOne;
-			}
-			player.getResources().subtract(2, i);
-			updateState(player);
-		}
-
-		for(int i=0; i<5; i++) {
-			for(int j=i+1; j<5; j++) {
-				player.getResources().add(1, i);
-				player.getResources().add(1, j);
-				updateState(player);
-
-				newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-				newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-				newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-				if(!origCouldSettlement && newCouldSettlement){
-					SOCPossibleSettlement settlement = getBestSettlement(player);
-					settlementEval = settlementEvalFunction(settlement.getCoordinates(), player);
-				}
-				if(!origCouldRoad && newCouldRoad){
-					SOCPossibleRoad road = getBestRoad(player);
-					roadEval = roadEvalFunction(road.getCoordinates(), player);
-				}
-				if (!origCouldCity && newCouldCity) {
-					SOCPossibleCity city = getBestCity(player);
-					cityEval = cityEvalFunction(city.getCoordinates(), player);
-				}
-				double maxTwo = Math.max(settlementEval, Math.max(roadEval, cityEval));
-				if(maxTwo > bestEvalTwo){
-					bestEvalTwo = maxTwo;
-				}
-
-				player.getResources().subtract(1, i);
-				player.getResources().subtract(1, j);
-				updateState(player);
-			}
-		}
-
-		discEval = Math.max(bestEvalOne, bestEvalTwo);
-		try {
-			SOCDBHelper.devNormalization("DISC", discEval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on discovery:" + e);
-		}
-
-		double bestClay = -1;
-		double bestOre = -1;
-		double bestSheep = -1;
-		double bestWheat = -1;
-		double bestWood = -1;
-
-		double settlementEvalClay = -1;
-		double roadEvalClay = -1;
-		double cityEvalClay = -1;
-
-		double settlementEvalOre = -1;
-		double roadEvalOre = -1;
-		double cityEvalOre = -1;
-
-		double settlementEvalSheep = -1;
-		double roadEvalSheep = -1;
-		double cityEvalSheep = -1;
-
-		double settlementEvalWheat = -1;
-		double roadEvalWheat = -1;
-		double cityEvalWheat = -1;
-
-		double settlementEvalWood = -1;
-		double roadEvalWood = -1;
-		double cityEvalWood = -1;
-
-		SOCResourceSet temp = new SOCResourceSet(5, 0, 0, 0, 0, 0); //Simplifying with 5 cards received
-		player.getResources().add(temp);
-		updateState(player);
-
-		newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-		newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-		newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-		if(!origCouldSettlement && newCouldSettlement){
-			SOCPossibleSettlement settlementClay = getBestSettlement(player);
-			settlementEvalClay = settlementEvalFunction(settlementClay.getCoordinates(), player);
-		}
-		if(!origCouldRoad && newCouldRoad){
-			SOCPossibleRoad roadClay = getBestRoad(player);
-			roadEvalClay = roadEvalFunction(roadClay.getCoordinates(), player);
-		}
-		if (!origCouldCity && newCouldCity) {
-			SOCPossibleCity cityClay = getBestCity(player);
-			cityEvalClay = cityEvalFunction(cityClay.getCoordinates(), player);
-		}
-		player.getResources().subtract(temp);
-		updateState(player);
-		bestClay = Math.max(settlementEvalClay, Math.max(roadEvalClay, cityEvalClay));
-
-		temp = new SOCResourceSet(0, 5, 0, 0, 0, 0);
-		player.getResources().add(temp);
-		updateState(player);
-		newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-		newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-		newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-		if(!origCouldSettlement && newCouldSettlement){
-			SOCPossibleSettlement settlementOre = getBestSettlement(player);
-			settlementEvalOre = settlementEvalFunction(settlementOre.getCoordinates(), player);
-		}
-		if(!origCouldRoad && newCouldRoad){
-			SOCPossibleRoad roadOre = getBestRoad(player);
-			roadEvalOre = roadEvalFunction(roadOre.getCoordinates(), player);
-		}
-		if (!origCouldCity && newCouldCity) {
-			SOCPossibleCity cityOre = getBestCity(player);
-			cityEvalOre = cityEvalFunction(cityOre.getCoordinates(), player);
-		}
-		player.getResources().subtract(temp);
-		updateState(player);
-		bestOre = Math.max(settlementEvalOre, Math.max(roadEvalOre, cityEvalOre));
-
-		temp = new SOCResourceSet(0, 0, 5, 0, 0, 0);
-		player.getResources().add(temp);
-		updateState(player);
-		newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-		newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-		newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-		if(!origCouldSettlement && newCouldSettlement){
-			SOCPossibleSettlement settlementSheep = getBestSettlement(player);
-			settlementEvalSheep = settlementEvalFunction(settlementSheep.getCoordinates(), player);
-		}
-		if(!origCouldRoad && newCouldRoad){
-			SOCPossibleRoad roadSheep = getBestRoad(player);
-			roadEvalSheep = roadEvalFunction(roadSheep.getCoordinates(), player);
-		}
-		if (!origCouldCity && newCouldCity) {
-			SOCPossibleCity citySheep = getBestCity(player);
-			cityEvalSheep = cityEvalFunction(citySheep.getCoordinates(), player);
-		}
-		player.getResources().subtract(temp);
-		updateState(player);
-		bestSheep = Math.max(settlementEvalSheep, Math.max(roadEvalSheep, cityEvalSheep));
-
-		temp = new SOCResourceSet(0, 0, 0, 5, 0, 0);
-		player.getResources().add(temp);
-		updateState(player);
-		newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-		newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-		newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-		if(!origCouldSettlement && newCouldSettlement){
-			SOCPossibleSettlement settlementWheat = getBestSettlement(player);
-			settlementEvalWheat = settlementEvalFunction(settlementWheat.getCoordinates(), player);
-		}
-		if(!origCouldRoad && newCouldRoad){
-			SOCPossibleRoad roadWheat = getBestRoad(player);
-			roadEvalWheat = roadEvalFunction(roadWheat.getCoordinates(), player);
-		}
-		if (!origCouldCity && newCouldCity) {
-			SOCPossibleCity cityWheat = getBestCity(player);
-			cityEvalWheat = cityEvalFunction(cityWheat.getCoordinates(), player);
-		}
-		player.getResources().subtract(temp);
-		updateState(player);
-		bestWheat = Math.max(settlementEvalWheat, Math.max(roadEvalWheat, cityEvalWheat));
-
-		temp = new SOCResourceSet(0, 0, 0, 0, 5, 0);
-		player.getResources().add(temp);
-		updateState(player);
-		newCouldSettlement = player.game.couldBuildSettlement(player.playerNumber);
-		newCouldRoad = player.game.couldBuildRoad(player.playerNumber);
-		newCouldCity = player.game.couldBuildCity(player.playerNumber);
-
-		if(!origCouldSettlement && newCouldSettlement){
-			SOCPossibleSettlement settlementWood = getBestSettlement(player);
-			settlementEvalWood = settlementEvalFunction(settlementWood.getCoordinates(), player);
-		}
-		if(!origCouldRoad && newCouldRoad){
-			SOCPossibleRoad roadWood = getBestRoad(player);
-			roadEvalWood = roadEvalFunction(roadWood.getCoordinates(), player);
-		}
-		if (!origCouldCity && newCouldCity) {
-			SOCPossibleCity cityWood = getBestCity(player);
-			cityEvalWood = cityEvalFunction(cityWood.getCoordinates(), player);
-		}
-		player.getResources().subtract(temp);
-		updateState(player);
-		bestWood = Math.max(settlementEvalWood, Math.max(roadEvalWood, cityEvalWood));
-
-		monoEval = Math.max(bestClay, Math.max(bestOre, Math.max(bestSheep, Math.max(bestWheat, bestWood))));
-		try {
-			SOCDBHelper.devNormalization("MONO", monoEval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on MONO:" + e);
-		}
-
-		int origKnights = player.getNumKnights();
-		player.incrementNumKnights();
-		updateState(player);
-		if (relativeKnightsPlayed <= -1){
-			knightEval = .03;
-		}
-		if (relativeKnightsPlayed == 0){
-			knightEval = .04;
-		}
-		if (relativeKnightsPlayed == 1){
-			knightEval = .055;
-		}
-		if (relativeKnightsPlayed > 1){
-			knightEval = .035;
-		}
-		player.setNumKnights(origKnights);
-		updateState(player);
-		try {
-			SOCDBHelper.devNormalization("KNIGHT", knightEval);
-		}
-		catch (Exception e){
-			 System.err.println("Error updating on KNIGHT:" + e);
-		}
-
-		return 0;
-
-	}
-
 	public double devCardEvalFunction (String card, SOCPlayer player){
 		double roadBuildingEval = -1;
 		double discEval = -1;
@@ -977,7 +602,7 @@ public class SOCPlayerState {
 			player.game.undoPutTempPiece(temp1);
 			updateState(player);
 			roadBuildingEval = evalRoadOne + evalRoadTwo;
-			return (roadBuildingEval-rbMin)/(rbMax-rbMin);
+			return roadBuildingEval / rbAVG;
 		}
 
 		else if (card.equals("DISC")) {
@@ -1050,7 +675,7 @@ public class SOCPlayerState {
 			}
 
 			discEval = Math.max(bestEvalOne, bestEvalTwo);
-			return (discEval-discMin)/(discMax-discMin);
+			return discEval/ discAVG;
 		}
 
 		else if (card.equals("MONO")) {
@@ -1197,7 +822,7 @@ public class SOCPlayerState {
 			bestWood = Math.max(settlementEvalWood, Math.max(roadEvalWood, cityEvalWood));
 
 			monoEval = Math.max(bestClay, Math.max(bestOre, Math.max(bestSheep, Math.max(bestWheat, bestWood))));
-			return (monoEval-monoMin)/(monoMax-monoMin);
+			return monoEval /monoAVG;
 		}
 		else if (card.equals("KNIGHT")){
 			int origKnights = player.getNumKnights();
@@ -1217,7 +842,7 @@ public class SOCPlayerState {
 			}
 			player.setNumKnights(origKnights);
 			updateState(player);
-			return knightEval;
+			return knightEval/knightAVG;
 		}
 		else {
 			return -1;
@@ -1284,7 +909,6 @@ public class SOCPlayerState {
 		double knightEval = -1;
 		String card = "nothing";
 
-		double storingValue = temp(player);
 
 		//road builder
 		if (player.getInventory().hasPlayable(SOCDevCardConstants.ROADS) && player.game.canPlayRoadBuilding(player.playerNumber) &&
@@ -1313,7 +937,7 @@ public class SOCPlayerState {
 				card = "DISC";
 			}
 			else if (bestCard == monoEval) {
-			card = "MONO";
+				card = "MONO";
 			}
 			else {
 				card = "KNIGHT";
@@ -1326,59 +950,55 @@ public class SOCPlayerState {
 
 	public double[] getAction(SOCPlayer player){
 		double[] predictionArray = new double[6];
-		double settlementEval = 0;
-		double cityEval = 0;
-		double roadEval = 0;
-		double devCardEval = 0;
+		double settlementEvalFinal = 0;
+		double cityEvalFinal = 0;
+		double roadEvalFinal = 0;
+		double devCardEvalFinal = 0;
+		double buyDevCardFinal = 0;
 		double endTurn = -100;
 
-                Boolean pOne = mfOne.equals(player.getName());
+		updateState(player);
 
 		if (player.game.couldBuildSettlement(player.playerNumber)){
 				SOCPossibleSettlement settlement = getBestSettlement(player);
-                                Double test = settlementEvalFunction(settlement.getCoordinates(), player);
-                                System.out.println("SETTLEMENTEVAL: " + test);
-				settlementEval = (pOne ? mfOne_weightOne : mfTwo_weightOne) *
-                                        (test);
+				 settlementEvalFinal = (weightOne) * (settlementEvalFunction(settlement.getCoordinates(), player));
 		}
 
 		if (player.game.couldBuildCity(player.playerNumber)){
 				SOCPossibleCity city = getBestCity(player);
-				cityEval = (pOne ? mfOne_weightTwo : mfTwo_weightTwo) *
-                                        (cityEvalFunction(city.getCoordinates(), player));
+				cityEvalFinal = weightTwo * (cityEvalFunction(city.getCoordinates(), player));
 		}
 
 		if (player.game.couldBuildRoad(player.playerNumber)){
-                    if(relativeLongestRoadLength < 2) {
-			SOCPossibleRoad road = getBestRoad(player);
-			roadEval = (pOne ? mfOne_weightThree : mfTwo_weightThree) *
-                            (roadEvalFunction(road.getCoordinates(), player));
-                    }
+      if(relativeLongestRoadLength < 2) {
+				SOCPossibleRoad road = getBestRoad(player);
+				roadEvalFinal = weightThree * (roadEvalFunction(road.getCoordinates(), player));
+			}
+			else {
+				roadEvalFinal = -1000;
+			}
 		}
 
 		String devCard = getBestDevCard(player);
 		if(!devCard.equals("nothing")){
-			devCardEval = (pOne ? mfOne_weightFour : mfTwo_weightFour) *
-                            (devCardEvalFunction(devCard, player));
+			devCardEvalFinal = (weightFour) * (devCardEvalFunction(devCard, player));
 		}
 
 		//.179340 is the calculated value of buy dev card
-		double buyDevCard = (pOne ? mfOne_weightFive : mfTwo_weightFive) * .07;
+		if(relativeKnightsPlayed <= 2){
+			buyDevCardFinal = weightFive * .1;
+		}
+		else{
+			buyDevCardFinal = -1000;
+		}
 
-		predictionArray[0] = settlementEval;
-		predictionArray[1] = cityEval;
-		predictionArray[2] = roadEval;
-		predictionArray[3] = devCardEval;
-		predictionArray[4] = buyDevCard;
+		predictionArray[0] = settlementEvalFinal;
+		predictionArray[1] = cityEvalFinal;
+		predictionArray[2] = roadEvalFinal;
+		predictionArray[3] = devCardEvalFinal;
+		predictionArray[4] = buyDevCardFinal;
 		predictionArray[5] = endTurn;
 
-                if(pOne == true) {
-                System.out.println("Weights1: " + mfOne_weightOne + " " + mfOne_weightTwo + " " + mfOne_weightThree + " " + mfOne_weightFour + " " + mfOne_weightFive);
-                } else {
-                    System.out.println("Weights2: " + mfTwo_weightOne + " " + mfTwo_weightTwo + " " + mfTwo_weightThree + " " + mfTwo_weightFour + " " + mfTwo_weightFive);
-                }
-
-                System.out.println("YO: " + settlementEval + " " + cityEval + " " + roadEval + " " + devCardEval + " " + buyDevCard + " " + endTurn);
 		return predictionArray;
 
 	}
@@ -1633,7 +1253,7 @@ public class SOCPlayerState {
 	public Vector getOutputVectorTwo(SOCPlayer player, double[] predictionArray){
 		Vector stateVector =  new Vector(1);
 		SOCBoard board = player.game.getBoard();
-		int[] value = new int[6];
+		int[] value = {0,0,0,0,0,0};
 		int prediction;
 		double currentBiggest = Double.POSITIVE_INFINITY;
 		int bestS = -1;
@@ -1678,7 +1298,7 @@ public class SOCPlayerState {
 		for (Integer node : legalNodes){
 			stateVector.add(node);
 			if(bestS == node){
-				stateVector.add(value[1]);
+				stateVector.add(value[0]);
 			}
 			else{
 				stateVector.add(0);
@@ -1692,7 +1312,7 @@ public class SOCPlayerState {
 		for (Integer node : legalNodes){
 			stateVector.add(node);
 			if(bestC == node){
-				stateVector.add(value[2]);
+				stateVector.add(value[1]);
 			}
 			else{
 				stateVector.add(0);
@@ -1706,7 +1326,7 @@ public class SOCPlayerState {
 		for (Integer edge : legalEdges){
 			stateVector.add(edge);
 			if (bestR == edge){
-				stateVector.add(value[3]);
+				stateVector.add(value[2]);
 			}
 			else{
 				stateVector.add(0);
@@ -1715,44 +1335,42 @@ public class SOCPlayerState {
 
 		String devCard = getBestDevCard(player);
 		if(devCard.equals("RB")){
-			stateVector.add(value[4]);
+			stateVector.add(value[3]);
 		}
 		else{
 			stateVector.add(0);
 		}
 
 		if(devCard.equals("DISC")){
-			stateVector.add(value[4]);
+			stateVector.add(value[3]);
 		}
 		else{
 			stateVector.add(0);
 		}
 
 		if(devCard.equals("MONO")){
-			stateVector.add(value[4]);
+			stateVector.add(value[3]);
 		}
 		else{
 			stateVector.add(0);
 		}
 
 		if(devCard.equals("KNIGHT")){
-			stateVector.add(value[4]);
+			stateVector.add(value[3]);
 		}
 		else{
 			stateVector.add(0);
 		}
 
-		stateVector.add(value[5]);
+		stateVector.add(value[4]);
 
 		return stateVector;
-
-
 
 
 	}
 
 
-	public Vector getOutputVector(SOCPlayer player){
+	public Vector getOutputVectorOne(SOCPlayer player){
 		Vector stateVector = new Vector(1);
 		SOCBoard board = player.game.getBoard();
 		HashSet<Integer> legalNodes = board.initPlayerLegalSettlements();
@@ -1796,17 +1414,29 @@ public class SOCPlayerState {
 									!player.hasPlayedDevCard() && player.getNumPieces(SOCPlayingPiece.ROAD) >= 2) {
 			stateVector.add(devCardEvalFunction("RB", player));
 		}
+		else{
+			stateVector.add(0);
+		}
 		//YOP
-		else if (player.getInventory().hasPlayable(SOCDevCardConstants.DISC) && player.game.canPlayDiscovery(player.playerNumber) && !player.hasPlayedDevCard()) {
+		if (player.getInventory().hasPlayable(SOCDevCardConstants.DISC) && player.game.canPlayDiscovery(player.playerNumber) && !player.hasPlayedDevCard()) {
 			stateVector.add(devCardEvalFunction("DISC", player));
 		}
+		else{
+			stateVector.add(0);
+		}
 		//monopoly
-		else if (player.getInventory().hasPlayable(SOCDevCardConstants.MONO) && player.game.canPlayMonopoly(player.playerNumber) && !player.hasPlayedDevCard()) {
+		if (player.getInventory().hasPlayable(SOCDevCardConstants.MONO) && player.game.canPlayMonopoly(player.playerNumber) && !player.hasPlayedDevCard()) {
 			stateVector.add(devCardEvalFunction("MONO", player));
 		}
+		else{
+			stateVector.add(0);
+		}
 		//knight
-		else if (player.getInventory().hasPlayable(SOCDevCardConstants.KNIGHT) && player.game.canPlayKnight(player.playerNumber) && !player.hasPlayedDevCard()) {
+		if (player.getInventory().hasPlayable(SOCDevCardConstants.KNIGHT) && player.game.canPlayKnight(player.playerNumber) && !player.hasPlayedDevCard()) {
 			stateVector.add(devCardEvalFunction("KNIGHT", player));
+		}
+		else{
+			stateVector.add(0);
 		}
 
 		if(player.game.canBuyDevCard(player)){
@@ -1821,7 +1451,7 @@ public class SOCPlayerState {
 
 	}
 
-	public Vector getInputVector(SOCPlayer player){
+	public Vector getInputVectorOne(SOCPlayer player){
 		Vector stateVector = new Vector(1);
 
 		//nodes --> settlements and cities
@@ -1909,21 +1539,13 @@ public class SOCPlayerState {
 		return array;
 	}
 
-	public static String getWeights(Boolean first){
+	public String getWeights(){
 		StringBuilder rel = new StringBuilder();
-                if (first == false) {
-                    rel.append("\'" + mfOne_weightOne + "\',");
-                    rel.append("\'" + mfOne_weightTwo + "\',");
-                    rel.append("\'" + mfOne_weightThree + "\',");
-                    rel.append("\'" + mfOne_weightFour + "\',");
-                    rel.append("\'" + mfOne_weightFive + "\',");
-                } else {
-                    rel.append("\'" + mfTwo_weightOne + "\',");
-                    rel.append("\'" + mfTwo_weightTwo + "\',");
-                    rel.append("\'" + mfTwo_weightThree + "\',");
-                    rel.append("\'" + mfTwo_weightFour + "\',");
-                    rel.append("\'" + mfTwo_weightFive + "\',");
-                }
+    rel.append("\'" + weightOne + "\',");
+		rel.append("\'" + weightTwo + "\',");
+    rel.append("\'" + weightThree + "\',");
+		rel.append("\'" + weightFour + "\',");
+		rel.append("\'" + weightFive + "\',");
 		return rel.toString();
 	}
 

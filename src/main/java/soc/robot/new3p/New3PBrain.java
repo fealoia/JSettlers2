@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 import java.io.*;
+import java.sql.Timestamp;
 
 import soc.game.SOCCity;
 import soc.game.SOCDevCardConstants;
@@ -223,7 +224,48 @@ public class New3PBrain extends SOCRobotBrain
 				//   predictionArray[i] = Double.parseDouble(intermediateThree[i]);
 				// }
 
+				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+				long ms = timestamp.getTime();
 				predictionArray = state.getAction(player);
+				try {
+					SOCDBHelper.saveInputVector(state.stateToString(state.getInputVectorOne(player)), state.stateToString(state.getInputVectorTwo(player)), ms);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on saveInputVectorOne:" + e);
+				}
+
+				try {
+					SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on saveOutputVectorOne:" + e);
+				}
+
+				try {
+					SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on saveOutputVectorTwo:" + e);
+				}
+				try {
+					SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
+				}
+				catch (Exception e){
+					 System.err.println("Error updating on saveOutputVectorThree:" + e);
+				}
+				// try {
+				// 	SOCDBHelper.saveVectorTwo(state.getInputVector(), state.getInputVectorTwo(), state.getOutputVectorTwo());
+				// }
+				// catch (Exception e){
+				// 	 System.err.println("Error updating on saveVectorTwo:" + e);
+				// }
+				//
+				// try {
+				// 	SOCDBHelper.saveVectorThree(state.getInputVector(), state.getInputVectorTwo(), state.getOutputVectorThree());
+				// }
+				// catch (Exception e){
+				// 	 System.err.println("Error updating on saveVectorThree:" + e);
+				// }
 
 				//predictionArray now holds the prediction probabilities. Go through them to see what to build
 				while(canDo == false){
