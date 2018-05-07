@@ -1811,8 +1811,8 @@ public class SOCDBHelper
     }
 
     public static void saveVP(int victoryPoints, String game, String name) throws SQLException{
-      if (testOne_doesTableExist("saveVPNew", true, false) == false) {
-        String sql = "CREATE TABLE saveVPNew(FinalVPs INT, game TEXT, playerName TEXT);";
+      if (testOne_doesTableExist("saveVPFinalTester", true, false) == false) {
+        String sql = "CREATE TABLE saveVPFinalTester(FinalVPs INT, game TEXT, playerName TEXT);";
         try{
           runDDL(sql);
         }
@@ -1822,7 +1822,7 @@ public class SOCDBHelper
       }
 
       StringBuilder sql = new StringBuilder();
-      sql.append("INSERT into saveVPNew VALUES(");
+      sql.append("INSERT into saveVPFinalTester VALUES(");
       sql.append("\'" + victoryPoints + "\',");
       sql.append("\'" + game + "\',");
       sql.append("\'" + name + "\'");
@@ -1838,8 +1838,8 @@ public class SOCDBHelper
     }
 
     public static void saveWeights(String weights, SOCPlayer player) throws SQLException{
-      if (testOne_doesTableExist("weightsNew", true, false) == false) {
-        String sql = "CREATE TABLE weightsNew(playerName TEXT, weightOne DOUBLE, weightTwo DOUBLE, weightThree DOUBLE,"
+      if (testOne_doesTableExist("saveWeightFinalTester", true, false) == false) {
+        String sql = "CREATE TABLE saveWeightFinalTester(playerName TEXT, weightOne DOUBLE, weightTwo DOUBLE, weightThree DOUBLE,"
                         + "weightFour DOUBLE, weightFive DOUBLE, game TEXT);";
         try{
           runDDL(sql);
@@ -1850,7 +1850,7 @@ public class SOCDBHelper
       }
 
       StringBuilder sql = new StringBuilder();
-      sql.append("INSERT into weightsNew VALUES(");
+      sql.append("INSERT into saveWeightFinalTester VALUES(");
       sql.append("\'" + player.getName() + "\',");
       sql.append(weights);
       sql.append("\'" + player.game.getName() + "\'");

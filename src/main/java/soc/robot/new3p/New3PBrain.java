@@ -199,7 +199,7 @@ public class New3PBrain extends SOCRobotBrain
 
 				action, position = state.getActionPair();
 				*/
-				Vector stateVector = state.getState();
+				// Vector stateVector = state.getState();
 				//
 				// try{
 				// 	ProcessBuilder pb = new ProcessBuilder("python3","prediction.py",""+stateVector);

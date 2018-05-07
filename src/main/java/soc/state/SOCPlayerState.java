@@ -90,10 +90,13 @@ public class SOCPlayerState {
 	protected int[] hasPort = new int[7];
 	protected double settlementMin = 3;
 	protected double settlementMax = 13343.463369963369;
+	protected double settlementAVG = 1754.4874416719763;
 	protected double cityMin =  3;
 	protected double cityMax =  15440.944444444445;
+	protected double cityAVG = 2410.4836098869982;
 	protected double roadMin = 0;
 	protected double roadMax =  608.3699132852703;
+	protected double roadAVG = 8.341023771643231;
 	protected double rbMin = 0;
 	protected double rbMax =  50.78634807841725;
 	protected double monoMin = -1;
@@ -164,16 +167,17 @@ public class SOCPlayerState {
              if(game != null && currentGameName.equals(game.getName())) return;
              currentGameName = game.getName();
 
-              mfOne_weightOne = random.nextDouble();
-              mfOne_weightTwo = (1-mfOne_weightOne) * random.nextDouble();
-              mfOne_weightThree = (1 - (mfOne_weightOne + mfOne_weightTwo)) * random.nextDouble();
-              mfOne_weightFour = (1 - (mfOne_weightOne + mfOne_weightTwo + mfOne_weightThree)) * random.nextDouble();
-              mfOne_weightFive = 1 - mfOne_weightFour - mfOne_weightThree - mfOne_weightTwo - mfOne_weightOne;
-              mfTwo_weightOne = random.nextDouble();
-              mfTwo_weightTwo = (1-mfTwo_weightOne) * random.nextDouble();
-              mfTwo_weightThree = (1 - (mfTwo_weightOne + mfTwo_weightTwo)) * random.nextDouble();
-              mfTwo_weightFour = (1 - (mfTwo_weightOne + mfTwo_weightTwo + mfTwo_weightThree)) * random.nextDouble();
-              mfTwo_weightFive = 1 - mfTwo_weightFour - mfTwo_weightThree - mfTwo_weightTwo - mfTwo_weightOne;
+              mfOne_weightOne = 0.050772343268348896;
+              mfOne_weightTwo = 0.7123877146799872;
+              mfOne_weightThree = 0.11188390127880482;
+              mfOne_weightFour = 0.10621878269792341;
+              mfOne_weightFive = 0.01873725807493576;
+
+              mfTwo_weightOne = 0.6702873908683921
+              mfTwo_weightTwo = 0.1070463124263031;
+              mfTwo_weightThree = 0.0748336653733929;
+              mfTwo_weightFour = 0.011916578904321289;
+              mfTwo_weightFive = 0.13591605242759064;
 
              SOCPlayer[] players = game.getPlayers();
              boolean first = false;
@@ -516,7 +520,8 @@ public class SOCPlayerState {
 		// catch (Exception e){
 		// 	 System.err.println("Error updating on settlement:" + e);
 		// }
-		return (eval - settlementMin)/(settlementMax - settlementMin);
+		//return (eval - settlementMin)/(settlementMax - settlementMin);
+		return eval/settlementAVG;
 	}
 
 	public double cityEvalFunction(Integer city, SOCPlayer player){
@@ -601,7 +606,8 @@ public class SOCPlayerState {
 		// catch (Exception e){
 		// 	 System.err.println("Error updating on settlement:" + e);
 		// }
-		return (eval - cityMin)/(cityMax-cityMin);
+		// return (eval - cityMin)/(cityMax-cityMin);
+		return eval/cityAVG;
 	}
 
 
@@ -655,7 +661,8 @@ public class SOCPlayerState {
 		// catch (Exception e){
 		// 	 System.err.println("Error updating on road:" + e);
 		// }
-		return (eval - roadMin)/(roadMax-roadMin);
+		// return (eval - roadMin)/(roadMax-roadMin);
+		return eval/roadAVG;
 	}
 
 	public double temp(SOCPlayer player){
@@ -1356,7 +1363,7 @@ public class SOCPlayerState {
 		}
 
 		//.179340 is the calculated value of buy dev card
-		double buyDevCard = (pOne ? mfOne_weightFive : mfTwo_weightFive) * .03;
+		double buyDevCard = (pOne ? mfOne_weightFive : mfTwo_weightFive) * .07;
 
 		predictionArray[0] = settlementEval;
 		predictionArray[1] = cityEval;
@@ -1364,6 +1371,7 @@ public class SOCPlayerState {
 		predictionArray[3] = devCardEval;
 		predictionArray[4] = buyDevCard;
 		predictionArray[5] = endTurn;
+
                 if(pOne == true) {
                 System.out.println("Weights1: " + mfOne_weightOne + " " + mfOne_weightTwo + " " + mfOne_weightThree + " " + mfOne_weightFour + " " + mfOne_weightFive);
                 } else {
@@ -1410,7 +1418,7 @@ public class SOCPlayerState {
 		return rel.toString();
 	}
 
-	public Vector getState(){
+	public Vector getInputVectorTwo(SOCPlayer player){
 		Vector stateVector = new Vector(26);
 		//amount of clay in hand
 		stateVector.add(resources.getAmount(0));
@@ -1424,12 +1432,36 @@ public class SOCPlayerState {
 		stateVector.add(resources.getAmount(4));
 		//has knight to play this turn
 		stateVector.add(hasKnightToPlay);
+		if(hasKnightToPlay == 1){
+			stateVector.add(devCardEvalFunction("KNIGHT", player));
+		}
+		else{
+			stateVector.add(0);
+		}
 		//has year of plenty to play this turn
 		stateVector.add(hasDISCToPlay);
+		if(hasDISCToPlay == 1){
+			stateVector.add(devCardEvalFunction("DISC", player));
+		}
+		else{
+			stateVector.add(0);
+		}
 		//has monopoly to play this turn
 		stateVector.add(hasMONOToPlay);
+		if(hasMONOToPlay == 1){
+			stateVector.add(devCardEvalFunction("MONO", player));
+		}
+		else{
+			stateVector.add(0);
+		}
 		//has road builder to play this turn
 		stateVector.add(hasRBToPlay);
+		if(hasRBToPlay == 1){
+			stateVector.add(devCardEvalFunction("RB", player));
+		}
+		else{
+			stateVector.add(0);
+		}
 		//number of VP player has
 		stateVector.add(victoryPoints);
 		//relative longest road
@@ -1437,11 +1469,26 @@ public class SOCPlayerState {
 		//relative largest army
 		stateVector.add(relativeKnightsPlayed);
 		//rating of best settlement to build
-		stateVector.add(nextBestSettlementValue);
-		//rating of best settlement to build after one road
-		stateVector.add(nextBestSettlementAndRoadValue);
+		if(player.game.couldBuildSettlement(player.playerNumber)){
+			stateVector.add(settlementEvalFunction((Integer) getBestSettlement(player).getCoordinates(), player));
+		}
+		else{
+			stateVector.add(0);
+		}
 		//rating of best city to build
-		stateVector.add(nextBestCityValue);
+		if(player.game.couldBuildCity(player.playerNumber)){
+			stateVector.add(cityEvalFunction((Integer) getBestCity(player).getCoordinates(), player));
+		}
+		else{
+			stateVector.add(0);
+		}
+		//rating of best road to build
+		if(player.game.couldBuildRoad(player.playerNumber)){
+			stateVector.add(roadEvalFunction((Integer) getBestRoad(player).getCoordinates(), player));
+		}
+		else{
+			stateVector.add(0);
+		}
 		//relative clay
 		stateVector.add(relativeClay);
 		//relative ore
@@ -1464,6 +1511,311 @@ public class SOCPlayerState {
 		stateVector.add(woodPort);
 		//has misc port
 		stateVector.add(miscPort);
+
+		return stateVector;
+
+	}
+
+	public Vector getOutputVectorThree(SOCPlayer player, double[] predictionArray){
+		Vector stateVector =  new Vector(1);
+		SOCBoard board = player.game.getBoard();
+		int prediction;
+		String best = "";
+		double currentBiggest = Double.POSITIVE_INFINITY;
+		int bestS = -1;
+		int bestC = -1;
+		int bestR = -1;
+
+		Object[] biggest = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)biggest[0];
+		if (prediction == 0){
+			best = "settlement";
+		}
+		else if (prediction == 1){
+			best = "city";
+		}
+		else if (prediction == 2){
+			best = "road";
+		}
+		else if (prediction == 3){
+			best = "useDevCard";
+		}
+		else if (prediction == 4){
+			best = "buyDevCard";
+		}
+
+		if(player.game.couldBuildSettlement(player.playerNumber)){
+			bestS = getBestSettlement(player).getCoordinates();
+		}
+
+		HashSet<Integer> legalNodes = board.initPlayerLegalSettlements();
+		for (Integer node : legalNodes){
+			stateVector.add(node);
+			if(bestS == node && best.equals("settlement")){
+				stateVector.add(1);
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		if(player.game.couldBuildCity(player.playerNumber)){
+			bestC = getBestCity(player).getCoordinates();
+		}
+
+		for (Integer node : legalNodes){
+			stateVector.add(node);
+			if(bestC == node && best.equals("city")){
+				stateVector.add(1);
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		if(player.game.couldBuildRoad(player.playerNumber)){
+			bestR = getBestRoad(player).getCoordinates();
+		}
+
+		HashSet<Integer> legalEdges = board.initPlayerLegalRoads();
+		for (Integer edge : legalEdges){
+			stateVector.add(edge);
+			if (bestR == edge && best.equals("road")){
+				stateVector.add(1);
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		String devCard = getBestDevCard(player);
+		if(devCard.equals("RB") && best.equals("useDevCard")){
+			stateVector.add(1);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(devCard.equals("DISC") && best.equals("useDevCard")){
+			stateVector.add(1);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(devCard.equals("MONO") && best.equals("useDevCard")){
+			stateVector.add(1);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(devCard.equals("KNIGHT") && best.equals("useDevCard")){
+			stateVector.add(1);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(best.equals("buyDevCard")){
+			stateVector.add(1);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		return stateVector;
+
+
+
+	}
+
+	public Vector getOutputVectorTwo(SOCPlayer player, double[] predictionArray){
+		Vector stateVector =  new Vector(1);
+		SOCBoard board = player.game.getBoard();
+		int[] value = new int[6];
+		int prediction;
+		double currentBiggest = Double.POSITIVE_INFINITY;
+		int bestS = -1;
+		int bestC = -1;
+		int bestR = -1;
+
+		Object[] six = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)six[0];
+		value[prediction] = 6;
+		currentBiggest = (Double)six[1];
+
+		Object[] five = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)five[0];
+		value[prediction] = 5;
+		currentBiggest = (Double)five[1];
+
+		Object[] four = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)four[0];
+		value[prediction] = 4;
+		currentBiggest = (Double)four[1];
+
+		Object[] three = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)three[0];
+		value[prediction] = 3;
+		currentBiggest = (Double)three[1];
+
+		Object[] two = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)two[0];
+		value[prediction] = 2;
+		currentBiggest = (Double)two[1];
+
+		Object[] one = nextBiggest(predictionArray, currentBiggest);
+		prediction = (Integer)one[0];
+		value[prediction] = 1;
+		currentBiggest = (Double)one[1];
+
+		if(player.game.couldBuildSettlement(player.playerNumber)){
+			bestS = getBestSettlement(player).getCoordinates();
+		}
+
+		HashSet<Integer> legalNodes = board.initPlayerLegalSettlements();
+		for (Integer node : legalNodes){
+			stateVector.add(node);
+			if(bestS == node){
+				stateVector.add(value[1]);
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		if(player.game.couldBuildCity(player.playerNumber)){
+			bestC = getBestCity(player).getCoordinates();
+		}
+
+		for (Integer node : legalNodes){
+			stateVector.add(node);
+			if(bestC == node){
+				stateVector.add(value[2]);
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		if(player.game.couldBuildRoad(player.playerNumber)){
+			bestR = getBestRoad(player).getCoordinates();
+		}
+		HashSet<Integer> legalEdges = board.initPlayerLegalRoads();
+		for (Integer edge : legalEdges){
+			stateVector.add(edge);
+			if (bestR == edge){
+				stateVector.add(value[3]);
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		String devCard = getBestDevCard(player);
+		if(devCard.equals("RB")){
+			stateVector.add(value[4]);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(devCard.equals("DISC")){
+			stateVector.add(value[4]);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(devCard.equals("MONO")){
+			stateVector.add(value[4]);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		if(devCard.equals("KNIGHT")){
+			stateVector.add(value[4]);
+		}
+		else{
+			stateVector.add(0);
+		}
+
+		stateVector.add(value[5]);
+
+		return stateVector;
+
+
+
+
+	}
+
+
+	public Vector getOutputVector(SOCPlayer player){
+		Vector stateVector = new Vector(1);
+		SOCBoard board = player.game.getBoard();
+		HashSet<Integer> legalNodes = board.initPlayerLegalSettlements();
+		HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+		for (Integer node : legalNodes){
+			stateVector.add(node);
+			if (settlements.contains(node)){
+				stateVector.add(settlementEvalFunction(node, player));
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		HashSet<Integer> cities = (HashSet<Integer>) player.getPotentialCities().clone();
+
+		for(Integer node : legalNodes){
+			stateVector.add(node);
+			if(cities.contains(node)){
+				stateVector.add(cityEvalFunction(node, player));
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+		HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
+		HashSet<Integer> legalEdges = board.initPlayerLegalRoads();
+		for (Integer edge : legalEdges){
+			stateVector.add(edge);
+			if (roads.contains(edge)){
+				stateVector.add(roadEvalFunction(edge, player));
+			}
+			else{
+				stateVector.add(0);
+			}
+		}
+
+
+		if (player.getInventory().hasPlayable(SOCDevCardConstants.ROADS) && player.game.canPlayRoadBuilding(player.playerNumber) &&
+									!player.hasPlayedDevCard() && player.getNumPieces(SOCPlayingPiece.ROAD) >= 2) {
+			stateVector.add(devCardEvalFunction("RB", player));
+		}
+		//YOP
+		else if (player.getInventory().hasPlayable(SOCDevCardConstants.DISC) && player.game.canPlayDiscovery(player.playerNumber) && !player.hasPlayedDevCard()) {
+			stateVector.add(devCardEvalFunction("DISC", player));
+		}
+		//monopoly
+		else if (player.getInventory().hasPlayable(SOCDevCardConstants.MONO) && player.game.canPlayMonopoly(player.playerNumber) && !player.hasPlayedDevCard()) {
+			stateVector.add(devCardEvalFunction("MONO", player));
+		}
+		//knight
+		else if (player.getInventory().hasPlayable(SOCDevCardConstants.KNIGHT) && player.game.canPlayKnight(player.playerNumber) && !player.hasPlayedDevCard()) {
+			stateVector.add(devCardEvalFunction("KNIGHT", player));
+		}
+
+		if(player.game.canBuyDevCard(player)){
+			stateVector.add(1);
+		}
+		else{
+			stateVector.add(0);
+		}
+
 
 		return stateVector;
 
@@ -1536,6 +1888,25 @@ public class SOCPlayerState {
 		System.out.println("NUMBER OF ELEMENTS " + stateVector.size());
 		return stateVector;
 
+	}
+
+	public Object[] nextBiggest(double[] predictionArray, double currentBiggest){
+		double newmax = Double.NEGATIVE_INFINITY;
+		Object[] array = new Object[2];
+		int prediction = -1;
+		int i = 0;
+		for (double element : predictionArray){
+			// System.out.println("THIS IS THE ELEMNT " + element);
+			// System.out.println("CURRENT BIGGESt " + currentBiggest);
+			if ((element < currentBiggest) && (element > newmax)){
+				newmax = element;
+				prediction = i;
+			}
+			i = i + 1;
+		}
+		array[0] = prediction;
+		array[1] = newmax;
+		return array;
 	}
 
 	public static String getWeights(Boolean first){
