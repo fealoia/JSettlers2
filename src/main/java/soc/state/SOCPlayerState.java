@@ -1251,6 +1251,10 @@ public class SOCPlayerState {
 	}
 
 	public Vector getOutputVectorTwo(SOCPlayer player, double[] predictionArray){
+		for(double element: predictionArray){
+			System.out.print(element + ",");
+		}
+		System.out.println("");
 		Vector stateVector =  new Vector(1);
 		SOCBoard board = player.game.getBoard();
 		int[] value = {0,0,0,0,0,0};
@@ -1262,31 +1266,37 @@ public class SOCPlayerState {
 
 		Object[] six = nextBiggest(predictionArray, currentBiggest);
 		prediction = (Integer)six[0];
+		System.out.println(prediction);
 		value[prediction] = 6;
 		currentBiggest = (Double)six[1];
 
 		Object[] five = nextBiggest(predictionArray, currentBiggest);
 		prediction = (Integer)five[0];
+		System.out.println(prediction);
 		value[prediction] = 5;
 		currentBiggest = (Double)five[1];
 
 		Object[] four = nextBiggest(predictionArray, currentBiggest);
 		prediction = (Integer)four[0];
+		System.out.println(prediction);
 		value[prediction] = 4;
 		currentBiggest = (Double)four[1];
 
 		Object[] three = nextBiggest(predictionArray, currentBiggest);
 		prediction = (Integer)three[0];
+		System.out.println(prediction);
 		value[prediction] = 3;
 		currentBiggest = (Double)three[1];
 
 		Object[] two = nextBiggest(predictionArray, currentBiggest);
 		prediction = (Integer)two[0];
+		System.out.println(prediction);
 		value[prediction] = 2;
 		currentBiggest = (Double)two[1];
 
 		Object[] one = nextBiggest(predictionArray, currentBiggest);
 		prediction = (Integer)one[0];
+		System.out.println(prediction);
 		value[prediction] = 1;
 		currentBiggest = (Double)one[1];
 
@@ -1299,6 +1309,7 @@ public class SOCPlayerState {
 			stateVector.add(node);
 			if(bestS == node){
 				stateVector.add(value[0]);
+				System.out.println(value[0]);
 			}
 			else{
 				stateVector.add(0);
@@ -1313,6 +1324,7 @@ public class SOCPlayerState {
 			stateVector.add(node);
 			if(bestC == node){
 				stateVector.add(value[1]);
+				System.out.println(value[1]);
 			}
 			else{
 				stateVector.add(0);
@@ -1327,6 +1339,7 @@ public class SOCPlayerState {
 			stateVector.add(edge);
 			if (bestR == edge){
 				stateVector.add(value[2]);
+				System.out.println(value[2]);
 			}
 			else{
 				stateVector.add(0);
@@ -1336,6 +1349,7 @@ public class SOCPlayerState {
 		String devCard = getBestDevCard(player);
 		if(devCard.equals("RB")){
 			stateVector.add(value[3]);
+			System.out.println(value[3]);
 		}
 		else{
 			stateVector.add(0);
@@ -1363,6 +1377,7 @@ public class SOCPlayerState {
 		}
 
 		stateVector.add(value[4]);
+		System.out.println(value[4]);
 
 		return stateVector;
 
@@ -1525,10 +1540,18 @@ public class SOCPlayerState {
 		Object[] array = new Object[2];
 		int prediction = -1;
 		int i = 0;
+		int count = 0;
 		for (double element : predictionArray){
 			// System.out.println("THIS IS THE ELEMNT " + element);
 			// System.out.println("CURRENT BIGGESt " + currentBiggest);
+			if(element ==  currentBiggest){
+				count ++;
+			}
 			if ((element < currentBiggest) && (element > newmax)){
+				newmax = element;
+				prediction = i;
+			}
+			if (element == currentBiggest && count > 1){
 				newmax = element;
 				prediction = i;
 			}

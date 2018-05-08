@@ -224,9 +224,11 @@ public class New3PBrain extends SOCRobotBrain
 				//   predictionArray[i] = Double.parseDouble(intermediateThree[i]);
 				// }
 
+
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				long ms = timestamp.getTime();
 				predictionArray = state.getAction(player);
+				state.getOutputVectorTwo(player, predictionArray);
 				try {
 					SOCDBHelper.saveInputVector(state.stateToString(state.getInputVectorOne(player)), state.stateToString(state.getInputVectorTwo(player)), ms);
 				}
