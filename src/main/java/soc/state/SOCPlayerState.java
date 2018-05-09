@@ -498,7 +498,7 @@ public class SOCPlayerState {
 		double currentRelativeWood = relativeWood;
 
 		SOCCity temp = new SOCCity(player, city, player.game.getBoard());
-		player.game.putTempPiece(temp);
+//		player.game.putTempPiece(temp);
 		updateState(player);
 
 		double clayDifference = relativeClay - currentRelativeClay;
@@ -508,7 +508,7 @@ public class SOCPlayerState {
 		double woodDifference = relativeWood - currentRelativeWood;
 
 		double relativeResourceGain = clayDifference + oreDifference + sheepDifference + wheatDifference + woodDifference;
-		player.game.undoPutTempPiece(temp);
+//		player.game.undoPutTempPiece(temp);
 		updateState(player);
 
 		eval = resourcesGained + relativeResourceGain;
@@ -1405,7 +1405,8 @@ public class SOCPlayerState {
 		for(Integer node : legalNodes){
 			stateVector.add(node);
 			if(cities.contains(node)){
-				stateVector.add(cityEvalFunction(node, player));
+				stateVector.add(0);//HERe
+			//	stateVector.add(cityEvalFunction(node, player));
 			}
 			else{
 				stateVector.add(0);

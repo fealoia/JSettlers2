@@ -228,7 +228,6 @@ public class New3PBrain extends SOCRobotBrain
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				long ms = timestamp.getTime();
 				predictionArray = state.getAction(player);
-				//state.getOutputVectorTwo(player, predictionArray);
 				try {
 					SOCDBHelper.saveInputVector(state.stateToString(state.getInputVectorOne(player)), state.stateToString(state.getInputVectorTwo(player)), ms);
 				}
@@ -237,38 +236,25 @@ public class New3PBrain extends SOCRobotBrain
 				}
 
 				try {
-				//	SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
+					SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on saveOutputVectorOne:" + e);
 				}
 
 				try {
-				//	SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
+					SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on saveOutputVectorTwo:" + e);
 				}
 				try {
-				//	SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
+					SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on saveOutputVectorThree:" + e);
 				}
-				// try {
-				// 	SOCDBHelper.saveVectorTwo(state.getInputVector(), state.getInputVectorTwo(), state.getOutputVectorTwo());
-				// }
-				// catch (Exception e){
-				// 	 System.err.println("Error updating on saveVectorTwo:" + e);
-				// }
-				//
-				// try {
-				// 	SOCDBHelper.saveVectorThree(state.getInputVector(), state.getInputVectorTwo(), state.getOutputVectorThree());
-				// }
-				// catch (Exception e){
-				// 	 System.err.println("Error updating on saveVectorThree:" + e);
-				// }
-
+	
 				//predictionArray now holds the prediction probabilities. Go through them to see what to build
 				while(canDo == false){
 					Object[] array = new Object[2];
