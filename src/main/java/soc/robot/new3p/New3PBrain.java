@@ -228,7 +228,7 @@ public class New3PBrain extends SOCRobotBrain
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				long ms = timestamp.getTime();
 				predictionArray = state.getAction(player);
-				state.getOutputVectorTwo(player, predictionArray);
+				//state.getOutputVectorTwo(player, predictionArray);
 				try {
 					SOCDBHelper.saveInputVector(state.stateToString(state.getInputVectorOne(player)), state.stateToString(state.getInputVectorTwo(player)), ms);
 				}
@@ -237,20 +237,20 @@ public class New3PBrain extends SOCRobotBrain
 				}
 
 				try {
-					SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
+				//	SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on saveOutputVectorOne:" + e);
 				}
 
 				try {
-					SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
+				//	SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on saveOutputVectorTwo:" + e);
 				}
 				try {
-					SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
+				//	SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
 				}
 				catch (Exception e){
 					 System.err.println("Error updating on saveOutputVectorThree:" + e);
