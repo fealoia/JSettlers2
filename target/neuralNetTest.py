@@ -134,9 +134,9 @@ if __name__ == "__main__":
     print(nn.evaluate([inputOneTest, inputTwoTest], outputTest))
     #
     model_json = nn.to_json()
-    with open("model.json", "w") as json_file:
+    with open("modelNew.json", "w") as json_file:
         json_file.write(model_json)
-    nn.save_weights("model.h5")
+    nn.save_weights("modelNew.h5")
     print("Saved model to disk")
 
     # prediction = [0, 0, 2, 1, 3, 0, 0, 0, 0, 3, -5, -3, 2.0, 3.6, 4.8, 0.27777777777777773, 0.0980392156862745, 0.16666666666666666, 0.07407407407407407, 0.1111111111111111, 0, 0, 0, 0, 0, 0]
