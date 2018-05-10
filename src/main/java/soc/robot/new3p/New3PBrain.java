@@ -187,10 +187,15 @@ public class New3PBrain extends SOCRobotBrain
     		SOCGame game = player.game;
 				boolean canDo = false;
 				int prediction = -1;
-				char[] predictionChar = new char[1000];
+				char[] predictionChar = new char[1000000];
 				double currentBiggest = Double.POSITIVE_INFINITY;
-				double[] predictionArray = new double[6];
+				double[] predictionArray = new double[365];
+				double[] predictionArrayTwo = new double[6];
 				String predictionString = "";
+				String typeOne = "bestSettlement";
+				String typeTwo = "bestCity";
+				String typeThree = "bestRoad";
+				String valid = "NO";
 
 				state.updateState(this.ourPlayerData);
 
@@ -200,65 +205,187 @@ public class New3PBrain extends SOCRobotBrain
 
 				action, position = state.getActionPair();
 				*/
-				// Vector stateVector = state.getState();
-				//
-				// try{
-				// 	ProcessBuilder pb = new ProcessBuilder("python3","prediction.py",""+stateVector);
-				// 	Process p = pb.start();
-				//
-				// 	BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				// 	int check = in.read(predictionChar, 0, predictionChar.length);
-				// 	if (check > -1){
-				// 		predictionString = new String(predictionChar);
-				// 	}
-				// }
-				// catch(Exception e){
-				// 	System.out.println(e);
-				// }
+				Vector statevectorOne = state.getInputVectorOne(player);
+				Vector statevectorTwo = state.getInputVectorTwo(player);
+
+				try{
+					ProcessBuilder pb = new ProcessBuilder("python3","predictionNew.py", ""+statevectorOne, ""+statevectorTwo);
+					Process p = pb.start();
+
+					BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					int check = in.read(predictionChar, 0, predictionChar.length);
+					if (check > -1){
+						predictionString = new String(predictionChar);
+					}
+				}
+				catch(Exception e){
+					System.out.println("DIDNT GET THERE");
+				}
+
+				predictionString = predictionString.substring(0, predictionString.indexOf("]"));
+				String intermediateOne = predictionString.replace("[[", "").trim();
+				String[] intermediateThree = intermediateOne.split("\\s+");
+				for (int i =0; i < intermediateThree.length - 1; i++){
+				  predictionArray[i] = Double.parseDouble(intermediateThree[i]);
+				}
 
 
-				// predictionString = predictionString.substring(0, predictionString.indexOf("]"));
-				// String intermediateOne = predictionString.replace("[[", "").trim();
-				// String[] intermediateThree = intermediateOne.split("\\s+");
-				// for (int i =0; i < intermediateThree.length - 1; i++){
-				//   predictionArray[i] = Double.parseDouble(intermediateThree[i]);
-				// }
+				Vector<Integer> nodeVector = new Vector<Integer>(1);
+				HashSet<Integer> legalNodes = player.game.getBoard().initPlayerLegalSettlements();
+				for(Integer node : legalNodes){
+					System.out.println("NODE " + node);
+					nodeVector.add(node);
+				}
+
+				Vector<Integer> nodeVectorTwo = new Vector<Integer>(1);
+				HashSet<Integer> legalEdges = player.game.getBoard().initPlayerLegalRoads();
+
+				for(Integer edge : legalEdges){
+					nodeVectorTwo.add(edge);
+				}
+
+
+				//Settlement NN check
+				double currentMax = Double.NEGATIVE_INFINITY;
+				double eval;
+				int position = -1;
+				for(int i =1; i < (2 * legalNodes.size()); i += 2){
+					eval = predictionArray[i];
+					if (eval > currentMax){
+						currentMax = eval;
+						position = i - 1;
+					}
+				}
+				int bestSettlement = nodeVector.get(position/2);
+				HashSet<Integer> settlements = (HashSet<Integer>) player.getPotentialSettlements().clone();
+				if(settlements.contains(bestSettlement)){
+					valid = "YES";
+					try {
+						SOCDBHelper.validPrediction(typeOne, valid);
+					}
+					catch (Exception e){
+						 System.err.println("Error updating on saveInputVectorOne:" + e);
+					}
+				}
+				else{
+					valid = "NO";
+					try {
+						SOCDBHelper.validPrediction(typeOne, valid);
+					}
+					catch (Exception e){
+						 System.err.println("Error updating on saveInputVectorOne:" + e);
+					}
+				}
+
+				//City NN check
+				currentMax = Double.NEGATIVE_INFINITY;
+				position = -1;
+				for(int i = 108 + 1; i < 108 + (2 * legalNodes.size()); i += 2){
+					eval = predictionArray[i];
+					if (eval > currentMax){
+						currentMax = eval;
+						position = i - 109;
+					}
+				}
+				int bestCity =  nodeVector.get(position/2);
+				Vector<SOCSettlement> potentialCities = player.getSettlements();
+				Vector cities = new Vector(1);
+				for (SOCSettlement city : potentialCities){
+					cities.add(city.getCoordinates());
+				}
+				if(cities.contains(bestCity)){
+					valid = "YES";
+					try {
+						SOCDBHelper.validPrediction(typeTwo, valid);
+					}
+					catch (Exception e){
+						 System.err.println("Error updating on saveInputVectorOne:" + e);
+					}
+				}
+				else{
+					valid = "NO";
+					try {
+						SOCDBHelper.validPrediction(typeTwo, valid);
+					}
+					catch (Exception e){
+						 System.err.println("Error updating on saveInputVectorOne:" + e);
+					}
+				}
+
+				//Road NN check
+
+				currentMax = Double.NEGATIVE_INFINITY;
+				position = -1;
+				for(int i = 217; i < (216 + legalEdges.size()); i += 2){
+					eval = predictionArray[i];
+					if (eval > currentMax){
+						currentMax = eval;
+						position = i - 217;
+					}
+				}
+				System.out.println("THIS IS THE POSITION " + position);
+				int bestRoad = nodeVectorTwo.get(position/2);
+				HashSet<Integer> roads = (HashSet<Integer>) player.getPotentialRoads().clone();
+				if(roads.contains(bestRoad)){
+					valid = "YES";
+					try {
+						SOCDBHelper.validPrediction(typeThree, valid);
+					}
+					catch (Exception e){
+						 System.err.println("Error updating on saveInputVectorOne:" + e);
+					}
+				}
+				else{
+					valid = "NO";
+					try {
+						SOCDBHelper.validPrediction(typeThree, valid);
+					}
+					catch (Exception e){
+						 System.err.println("Error updating on saveInputVectorOne:" + e);
+					}
+				}
+
+
 
 
 				Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 				long ms = timestamp.getTime();
-				predictionArray = state.getAction(player);
-				try {
-					SOCDBHelper.saveInputVector(state.stateToString(state.getInputVectorOne(player)), state.stateToString(state.getInputVectorTwo(player)), ms);
-				}
-				catch (Exception e){
-					 System.err.println("Error updating on saveInputVectorOne:" + e);
-				}
+				predictionArrayTwo = state.getAction(player);
 
-				try {
-					SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
-				}
-				catch (Exception e){
-					 System.err.println("Error updating on saveOutputVectorOne:" + e);
-				}
+				// try {
+				// 	SOCDBHelper.saveInputVector(state.stateToString(state.getInputVectorOne(player)), state.stateToString(state.getInputVectorTwo(player)), ms);
+				// }
+				// catch (Exception e){
+				// 	 System.err.println("Error updating on saveInputVectorOne:" + e);
+				// }
+				//
+				// try {
+				// 	SOCDBHelper.saveOutputVectorOne(state.stateToString(state.getOutputVectorOne(player)), ms);
+				// }
+				// catch (Exception e){
+				// 	 System.err.println("Error updating on saveOutputVectorOne:" + e);
+				// }
+				//
+				// try {
+				// 	SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
+				// }
+				// catch (Exception e){
+				// 	 System.err.println("Error updating on saveOutputVectorTwo:" + e);
+				// }
+				// try {
+				//	SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
+				// }
+				// catch (Exception e){
+				// 	 System.err.println("Error updating on saveOutputVectorThree:" + e);
+				//
+				// }
 
-				try {
-					SOCDBHelper.saveOutputVectorTwo(state.stateToString(state.getOutputVectorTwo(player, predictionArray)), ms);
-				}
-				catch (Exception e){
-					 System.err.println("Error updating on saveOutputVectorTwo:" + e);
-				}
-				try {
-					SOCDBHelper.saveOutputVectorThree(state.stateToString(state.getOutputVectorThree(player, predictionArray)), ms);
-				}
-				catch (Exception e){
-					 System.err.println("Error updating on saveOutputVectorThree:" + e);
-				}
-	
+
+
 				//predictionArray now holds the prediction probabilities. Go through them to see what to build
 				while(canDo == false){
 					Object[] array = new Object[2];
-					array = nextBiggest(predictionArray, currentBiggest);
+					array = nextBiggest(predictionArrayTwo, currentBiggest);
 					prediction = (Integer)array[0];
 					if (prediction == -1){
 						System.out.println("nextBiggest function failed");
@@ -267,8 +394,8 @@ public class New3PBrain extends SOCRobotBrain
 					canDo = canBuild(prediction, player, turnLookahead);
 				}
 
-				System.out.println("DOING ACTION " + prediction);
-				System.out.println("0 = building settlement, 1 = building city, 2 = building road, 3 = playing dev card, 4 = buying dev card, 5 = endturn");
+				// System.out.println("DOING ACTION " + prediction);
+				// System.out.println("0 = building settlement, 1 = building city, 2 = building road, 3 = playing dev card, 4 = buying dev card, 5 = endturn");
 
 		}
 
@@ -298,7 +425,6 @@ public class New3PBrain extends SOCRobotBrain
 					//build a settlement
 					if (prediction == 0 && game.couldBuildSettlement(player.playerNumber)){
 						canDo = true;
-						System.out.println("PROBLEM WAS WITH SETTLEMENT");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestSettlement(player));
 				  }
@@ -306,16 +432,13 @@ public class New3PBrain extends SOCRobotBrain
 					//build a city
 					else if (prediction == 1 && game.couldBuildCity(player.playerNumber)) {
 						canDo = true;
-						System.out.println("PROBLEM WAS WITH CITY");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestCity(player));
-						System.out.println("BUILD ON CITY SPOT: " + state.getBestCity(player).getCoordinates());
 			    }
 
 					//build a road
 					else if (prediction == 2 && game.couldBuildRoad(player.playerNumber)){
 						canDo = true;
-						System.out.println("PROBLEM WAS WITH ROAD");
 						buildingPlan.clear();
 						buildingPlan.push(state.getBestRoad(player));
 					}
@@ -325,7 +448,6 @@ public class New3PBrain extends SOCRobotBrain
 						String card = state.getBestDevCard(player);
 						if (card.equals("RB")) {
 							canDo = true;
-							System.out.println("PROBLEM WAS WITH RB");
 							buildingPlan.clear();
 							SOCPossibleRoad road1 = state.getBestRoad(player);
 							SOCRoad temp1 = new SOCRoad(player, road1.getCoordinates(), player.game.getBoard());
@@ -340,35 +462,29 @@ public class New3PBrain extends SOCRobotBrain
 						}
 						else if (card.equals("DISC")) {
 							canDo = true;
-							System.out.println("PROBLEM WAS WITH DISC");
 							buildingPlan.clear();
 							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.DISC));
 						}
 						else if (card.equals("MONO")) {
 							canDo = true;
-							System.out.println("PROBLEM WAS WITH MONO");
 							buildingPlan.clear();
 							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.MONO));
 						}
 						else if (card.equals("KNIGHT")) {
 							canDo = true;
-							System.out.println("PROBLEM WAS WITH KNIGHT");
 							buildingPlan.clear();
 							buildingPlan.push(new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.KNIGHT));
 						}
 						else if (card.equals("nothing")){
-							System.out.println("PROBLEM WAS WITH NOTHING");
 							canDo = false;
 						}
 						else{
-							System.out.println("PROBLEM WAS WITH ELSE STATEMENT");
 							canDo = false;
 						}
 					}
 					//buy a dev card
 					else if (prediction == 4 && game.couldBuyDevCard(player.playerNumber)) {
 				  	canDo = true;
-						System.out.println("PROBLEM WAS WITH BUYING DEV");
 				    SOCPossibleCard posTemp = new SOCPossibleCard(ourPlayerData, 0, SOCDevCardConstants.UNKNOWN);
 					  buildingPlan.clear();
 					  buildingPlan.push(posTemp);
@@ -376,7 +492,6 @@ public class New3PBrain extends SOCRobotBrain
 
 					//end turn
 					else {
-						System.out.println("PROBLEM WAS WITH END TURN");
 						canDo = true;
 					}
 					return canDo;

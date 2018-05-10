@@ -2221,8 +2221,8 @@ public class SOCDBHelper
     }
 
     public static void cityNormalization(final double eval) throws SQLException {
-      if (testOne_doesTableExist("cityNormalization", true, false) == false) {
-        String sql = "CREATE TABLE cityNormalization(cityEvaluation DOUBLE);";
+      if (testOne_doesTableExist("cityNormalizationTwo", true, false) == false) {
+        String sql = "CREATE TABLE cityNormalizationTwo(cityEvaluation DOUBLE);";
         try{
           runDDL(sql);
         }
@@ -2232,7 +2232,7 @@ public class SOCDBHelper
       }
 
       StringBuilder sql = new StringBuilder();
-      sql.append("INSERT into cityNormalization VALUES(");
+      sql.append("INSERT into cityNormalizationTwo VALUES(");
       sql.append("\'" + eval + "\'");
       sql.append(")");
 
@@ -2285,6 +2285,32 @@ public class SOCDBHelper
       sql.append("INSERT into devNormalization VALUES(");
       sql.append("\'" + type + "\',");
       sql.append("\'" + eval + "\'");
+      sql.append(")");
+
+      try {
+          runDDL(sql.toString());
+      }
+      catch (SQLException se) {
+          se.printStackTrace();
+              throw se;
+      }
+    }
+
+    public static void validPrediction(String type, String valid) throws SQLException {
+      if (testOne_doesTableExist("validPrediction", true, false) == false) {
+        String sql = "CREATE TABLE validPrediction(type TEXT, valid TEXT);";
+        try{
+          runDDL(sql);
+        }
+        catch (SQLException se){
+          throw se;
+        }
+      }
+
+      StringBuilder sql = new StringBuilder();
+      sql.append("INSERT into validPrediction VALUES(");
+      sql.append("\'" + type + "\',");
+      sql.append("\'" + valid + "\'");
       sql.append(")");
 
       try {
